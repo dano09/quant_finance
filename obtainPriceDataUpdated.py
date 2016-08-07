@@ -21,8 +21,8 @@ failed_data_symbols = []
     
 # Obtain a database connection to the MySQL instance
 db_host = 'localhost'
-db_user = 'root'
-db_pass = 'GoldfishSmiles.com'
+db_user = '*********'
+db_pass = '*********'
 db_name = 'securities_master3'
 con = mdb.connect(db_host, db_user, db_pass, db_name)
 
