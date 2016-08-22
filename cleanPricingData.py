@@ -130,48 +130,16 @@ def verify_price(symbolId, yData, qData):
 			# Case 2: Neither vendor had data, so we assign zeros
 			# to all values for this date
 			elif not tempPrices:
-				print "Neither Vendor had data for " + date.strftime("%Y-%m-%d") 
-				+ " so we will fill the days price data with zeros"
+				print "Neither Vendor had data for " + date.strftime("%Y-%m-%d") + " so we will fill the days price data with zeros"
 				newDataRow.extend([0,0,0,0,0,0])
 			
 			# Case 3: Compare the OHLCAV data
 			else:
 				yOHLCAV = format_data(yDailyPrice)
 				qOHLCAV = format_data(qDailyPrice)
-				volumeData = 0
 				
-				# Compare values for Open, High, Low, Close
-				# Adj Close, and Volume 
-				for i in range(len(yOHLCAV)):
-					'''
-					For volume, Quandl is used by default. Its an aggregate for 
-					all US volume over all exchanges. Yahoo does not provide 
-					information on how it derives its volume, so we stick with Quandl.
-					'''
-					if isinstance(yOHLCAV[i], long):
-						volumeData = qOHLCAV[i]
-					# All other values
-					else:
-						# Easy case, the values are equivalent
-						if yOHLCAV[i] == qOHLCAV[i]:
-							newDataRow.append(yOHLCAV[i])
-						else:
-							precisionPrice = checkPrecision(yOHLCAV[i],qOHLCAV[i])
-							# If one of the values is more precise, use that one
-							if precisionPrice:
-								newDataRow.append(precisionPrice)
-							else:
-								if yOHLCAV[i] == 0:
-									newDataRow.append(qOHLCAV[i])
-								elif qOHLCAV[i] == 0:
-									newDataRow.append(yOHLCAV[i])
-								# Cannot determine correct value, so assign
-								# zero. We will use the spike filter to pad 
-								# the inconsistent data points
-								else:
-									newDataRow.append(0)
-					
-				newDataRow.append(volumeData)
+				dataRow = compare_price_data(yOHLCAV, qOHLCAV)
+				newDataRow.extend(dataRow)
 
 			# Create dataframe row from list of values
 			priceDF = pd.DataFrame(data=[newDataRow], columns=['symbol_id','price_date',
@@ -185,7 +153,54 @@ def verify_price(symbolId, yData, qData):
 			print str(date.strftime("%Y-%m-%d")) + " is a US holiday!"
 			
 	return verifiedPrices
+	
+"""
+This method does the actual comparison of OHLCAV data for both vendors
 
+	yOHLCAV - Yahoo price data
+	qOHLCAV - Quandl price data
+	
+	returns - list of price data that has been cross referenced 
+"""
+def compare_price_data(yOHLCAV, qOHLCAV):	
+	# Compare values for Open, High, Low, Close
+	# Adj Close, and Volume 
+	volumeData = 0
+	dataRow = []
+	for i in range(len(yOHLCAV)):
+		'''
+		For volume, Quandl is used by default. Its an aggregate for 
+		all US volume over all exchanges. Yahoo does not provide 
+		information on how it derives its volume, so we stick with Quandl.
+		'''
+		if isinstance(yOHLCAV[i], long):
+			volumeData = qOHLCAV[i]
+		# All other values
+		else:
+				
+			# Easy case, the values are equivalent
+			if yOHLCAV[i] == qOHLCAV[i]:
+				dataRow.append(yOHLCAV[i])
+			else:
+				precisionPrice = checkPrecision(yOHLCAV[i],qOHLCAV[i])
+				# If one of the values is more precise, use that one
+				if precisionPrice:
+					dataRow.append(precisionPrice)
+				else:
+					if yOHLCAV[i] == 0:
+						dataRow.append(qOHLCAV[i])
+					elif qOHLCAV[i] == 0:
+						dataRow.append(yOHLCAV[i])
+					# Cannot determine correct value, so assign
+					# zero. We will use the spike filter to pad 
+					# the inconsistent data points
+					else:
+						dataRow.append(0)
+					
+	dataRow.append(volumeData)
+	return dataRow
+	
+	
 """
 Compares the earliest and latest date from both vendors, and returns the earliest
 and latest. We make no assumption that both vendors have all the data specified
