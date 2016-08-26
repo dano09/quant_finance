@@ -318,7 +318,7 @@ if __name__ == "__main__":
             print "Not a business day, ending program."
             sys.exit()
             
-    tickers = retrieve_db_tickers()
+    tickers = retrieve_db_tickers(con)
     # Collect data for each company
     for t in tickers:
         print "Cleaning price data for ticker: " + t[1] 

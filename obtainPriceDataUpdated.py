@@ -125,7 +125,7 @@ def generate_failure_file():
 if __name__ == "__main__":
     # Loop over the tickers and insert the daily historical
     # data into the database
-    tickers = retrieve_db_tickers()
+    tickers = retrieve_db_tickers(con)
 
     """Parameters used to gather price data over a period of time """
     start_date = (2016,8,2)

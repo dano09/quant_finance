@@ -135,7 +135,7 @@ For each company, pull the pricing data from
 Quandls API and save it to the database
 """
 if __name__ == "__main__":
-    tickers = retrieve_db_tickers()
+    tickers = retrieve_db_tickers(con)
 
     """Parameters to use to gather price data over a period of time """
     start = '2016-08-09'
