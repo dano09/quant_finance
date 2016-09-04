@@ -74,6 +74,7 @@ def insert_data_into_db(data_vendor_id, symbol_id, daily_data):
 	:param symbol_id: What we use to relate the ticker and price data
 	:param daily_data: List of tuples of the OHLCAV data
 	"""
+	#TESTING SPACES
 	# Map daily price information to the columns of our database table
 	daily_data = [(data_vendor_id, symbol_id, d[0], timestamp, timestamp,
 	               d[1], d[2], d[3], d[4], d[5], d[6]) for d in daily_data]
