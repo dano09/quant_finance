@@ -1,8 +1,6 @@
 # Quantitative Backtesting
 
-ABSTRACTION:
-
-This project details the creation of a Securities database that will be used in analysis of financial securities and also to backtest algorithmic trading strategies. The majority of the setup is completed with open source software, a MySQL database and the Python scripting language. Credit also goes to the Micheal Halls-Moore, for his articles on Quantstart.com helped me in the creation of some of the work.
+This project details the creation of a Securities database that will be used in analysis of financial securities and also to backtest algorithmic trading strategies. The majority of the setup is completed with open source software, a MySQL database and the Python scripting language. 
 
 INTRODUCTION:
 
