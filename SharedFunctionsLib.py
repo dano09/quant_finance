@@ -1,4 +1,11 @@
+
 def retrieve_db_tickers(connection):
+    """
+    Retrieve ticker symbols for each company from
+    the database.
+    :param connection:
+    :return: List of all tickers from database
+    """
     with connection:
         cur = connection.cursor()
         cur.execute("SELECT id, ticker FROM symbol")

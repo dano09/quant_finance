@@ -13,47 +13,33 @@ import os.path
 from SharedFunctionsLib import *
 
 timestamp = datetime.datetime.utcnow()
-quandl.ApiConfig.api_key = '****'
+quandl.ApiConfig.api_key = 'zmdzi5zBSfY6PsjDvvtV'
 failed_data_symbols = []
 
 # Obtain a database connection to the MySQL instance
 db_host = 'localhost'
 db_user = 'root'
-db_pass = '****'
-db_name = '****'
+db_pass = 'GoldfishSmiles.com'
+db_name = 'Securities_Master3'
 con = mdb.connect(db_host, db_user, db_pass, db_name)
 
-"""
-TODO: REMOVE IF IMPORT WAS SUCCESSFUL
-Retrive ticker symbols for each company from 
-the database.
 
-  returns - List of all tickers from database
-
-def retrieve_db_tickers():
-    with con:
-        cur = con.cursor()
-        cur.execute("SELECT id, ticker FROM symbol")
-        data = cur.fetchall()
-        return [(d[0], d[1]) for d in data]
-"""
-"""
-Obtains price data from Quandl's API for the specificed company.
-This function is currently set to get the most recent date, but is
-capable of collecting all data within the specified start_date and
-end_date parameters. The dates are in (YYYY, M, D) format
-
-  ticker -  Ticker symbol that represents a company
-  start - Collect pricing data starting at this date
-  end - Collection of pricing data ends at this date
-  returns - OHLCAV data for the company
-"""
 def get_Quandl_daily_data(ticker, start, end):
+    """
+    Obtains price data from Quandl's API for the specificed company.
+    This function is currently set to get the most recent date, but is
+    capable of collecting all data within the specified start_date and
+    end_date parameters. The dates are in (YYYY, M, D) format
+    :param ticker: Ticker symbol that represents a company
+    :param start:
+    :param end:
+    :return: OHLCAV data for the company
+    """
     prices = []
     symbol = format_ticker(ticker)
     valid_data_flag = True
 
-    #Attempt to connect to Quandl API and retrieve price data
+    # Attempt to connect to Quandl API and retrieve price data
     try:
         data = quandl.get("WIKI/" + symbol, start_date=start, end_date=end)
     except Exception, e:
@@ -72,21 +58,21 @@ def get_Quandl_daily_data(ticker, start, end):
             The tuples entries are as follows:
             Date, Open, High, Low, Close, Adjusted Close, Volume
             """
-            one_day_of_prices = (row[0],"%.4f" % row[1], "%.4f" % row[2],
+            one_day_of_prices = (row[0], "%.4f" % row[1], "%.4f" % row[2],
             "%.4f" % row[3], "%.4f" % row[4], "%.4f" % row[11], row[5])
             prices.append(one_day_of_prices)
 
     return prices
 
-"""
-Takes the OHLCAV data for a specific company, over pre-defined
-time range and adds it to the Database.
 
-  data_vendor_id - Identification for Quandl
-  symbol_id - What we use to relate the ticker and price data
-  daily_data - List of tuples of the OHLCAV data
-"""
 def insert_data_into_db(data_vendor_id, symbol_id, daily_data):
+    """
+    Takes the OHLCAV data for a specific company, over pre-defined
+    time range and adds it to the Database.
+    :param data_vendor_id:
+    :param symbol_id:
+    :param daily_data:
+    """
     # Map daily price data to the columns of our database table
     daily_data = [(data_vendor_id, symbol_id, d[0], timestamp, timestamp,
     d[1], d[2], d[3], d[4], d[5], d[6]) for d in daily_data]
@@ -98,31 +84,35 @@ def insert_data_into_db(data_vendor_id, symbol_id, daily_data):
     insert_str = ("%s, " * 11)[:-2]
     query_string = "INSERT INTO daily_price2 (%s) VALUES (%s)" % (column_str, insert_str)
 
-    #Connect with MySQL database and perform the insert query
+    # Connect with MySQL database and perform the insert query
     with con:
         cur = con.cursor()
         cur.executemany(query_string, daily_data)
 
-"""
-Utility: Creates file for failed tickers
-"""
+
 def generate_failure_file():
-  save_path = '****'
-  file_name = 'Failed_Quandl_uploads_' + str(datetime.date.today())
-  completeName = os.path.join(save_path, file_name + ".txt")
-  f = open(completeName, "w")
+    """
+    Utility: Creates file for failed tickers
+    """
+    save_path = '****'
+    file_name = 'Failed_Quandl_uploads_' + str(datetime.date.today())
+    complete_name = os.path.join(save_path, file_name + ".txt")
+    f = open(complete_name, "w")
 
-  for s in failed_data_symbols:
-    print("Failed symbol: " + str(s))
-    f.write("Failed: " + s + "\n")
+    for s in failed_data_symbols:
+        print("Failed symbol: " + str(s))
+        f.write("Failed: " + s + "\n")
 
-  f.close()
+    f.close()
 
-"""
-Utility: Some symbols from datbase need refactored
-         to work for Quandl API.
-"""
+
 def format_ticker(ticker):
+    """
+    Utility: Some symbols from datbase need refactored
+    to work for Quandl API.
+    :param A ticker symbol
+    :return: The new ticker name
+    """
     if '-' in ticker:
         symbol = ticker.replace("-","_")
     else:
@@ -130,16 +120,17 @@ def format_ticker(ticker):
     return symbol
 
 
-"""
-For each company, pull the pricing data from
-Quandls API and save it to the database
-"""
 if __name__ == "__main__":
+    """
+    For each company, pull the pricing data from
+    Quandls API and save it to the database
+    """
     tickers = retrieve_db_tickers(con)
 
     """Parameters to use to gather price data over a period of time """
-    start = '2016-08-09'
-    end = '2016-08-09'
+    # Format: 'YYYY-MM-DD'
+    start = '2016-09-02'
+    end = '2016-09-02'
 
     """Parameters to use to gather the most recent days price data """
     #start = datetime.date.today().strftime("%Y-%m-%d")
@@ -155,14 +146,15 @@ if __name__ == "__main__":
 
         # The data retrieval was a success
         elif quandl_data:
+            print "Not saving to DB"
             insert_data_into_db('2', t[0], quandl_data)
 
-        # No data implies non-buisness day
+        # No data implies non-business day
         else:
             print "No data, so it must be a holiday or weekend. No updates for today."
             break
 
-    #Save failed symbols off into a file for manual inspection
+    # Save failed symbols off into a file for manual inspection
     if failed_data_symbols:
         generate_failure_file()
 
