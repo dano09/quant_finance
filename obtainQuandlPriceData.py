@@ -13,14 +13,14 @@ import os.path
 from SharedFunctionsLib import *
 
 timestamp = datetime.datetime.utcnow()
-quandl.ApiConfig.api_key = 'zmdzi5zBSfY6PsjDvvtV'
+quandl.ApiConfig.api_key = '*'
 failed_data_symbols = []
 
 # Obtain a database connection to the MySQL instance
 db_host = 'localhost'
 db_user = 'root'
-db_pass = 'GoldfishSmiles.com'
-db_name = 'Securities_Master3'
+db_pass = '*'
+db_name = '*'
 con = mdb.connect(db_host, db_user, db_pass, db_name)
 
 
