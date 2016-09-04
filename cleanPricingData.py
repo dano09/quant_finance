@@ -23,7 +23,7 @@ import holidays
 db_host = 'localhost'
 db_user = 'root'
 db_pass = ''
-db_name = ''
+db_name = '*'
 con = mdb.connect(db_host, db_user, db_pass, db_name)
 timestamp = datetime.date.today()
 
