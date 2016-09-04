@@ -28,19 +28,6 @@ con = mdb.connect(db_host, db_user, db_pass, db_name)
 timestamp = datetime.date.today()
 
 
-def retrieve_db_tickers():
-	"""
-	Retrive ticker symbols for each company from
-	the database.
-	:return: List of all tickers from database
-	"""
-	with con:
-		cur = con.cursor()
-	cur.execute("SELECT id, ticker FROM symbol")
-	data = cur.fetchall()
-	return [(d[0], d[1]) for d in data]
-
-
 def retrieve_price_data(ticker, vendor_id, start, end):
 	"""
 	Retrive price data from the database for the specific
@@ -73,8 +60,8 @@ def retrieve_price_data(ticker, vendor_id, start, end):
 		else:
 			price_data = pd.DataFrame(list(cur.fetchall()))
 			price_data.columns = ['id', 'symbol_id', 'vendor_id', 'price_date', 'created_date',
-			                     'last_updated_date', 'open_price', 'high_price', 'low_price', 'close_price',
-			                     'adj_close_price', 'volume']
+			                      'last_updated_date', 'open_price', 'high_price', 'low_price', 'close_price',
+			                      'adj_close_price', 'volume']
 
 		return price_data
 
@@ -94,8 +81,8 @@ def verify_price(symbol_id, y_data, q_data):
 	number_of_data_points = 0
 	invalid_data_points = 0
 	verified_prices = pd.DataFrame(columns=['price_date',
-	                                       'created_date', 'last_updated_date', 'open_price', 'high_price',
-	                                       'low_price', 'close_price', 'adj_close_price', 'volume'])
+	                                        'created_date', 'last_updated_date', 'open_price', 'high_price',
+	                                        'low_price', 'close_price', 'adj_close_price', 'volume'])
 
 	# Gets the earliest and latest date. Used to handle the edge case
 	# where we might have one vendors range of data differ from the others
@@ -148,9 +135,9 @@ def verify_price(symbol_id, y_data, q_data):
 
 			# Create dataframe row from list of values
 			price_DF = pd.DataFrame(data=[new_data_row], columns=['symbol_id', 'price_date',
-			                                                   'created_date', 'last_updated_date', 'open_price',
-			                                                   'high_price', 'low_price',
-			                                                   'close_price', 'adj_close_price', 'volume'])
+			                                                      'created_date', 'last_updated_date', 'open_price',
+			                                                      'high_price', 'low_price',
+			                                                      'close_price', 'adj_close_price', 'volume'])
 
 			# Add the new price data for the specific date to our dataframe
 			verified_prices = verified_prices.append(price_DF, ignore_index=True)
@@ -320,8 +307,8 @@ if __name__ == "__main__":
 
 	"""Parameters to use to gather price data over a period of time """
 	# Format: 'YYYY-MM-DD'
-	#start = '2016-09-01'
-	#end = '2016-09-02'
+	# start = '2016-09-01'
+	# end = '2016-09-02'
 	total_data_points = 0
 	invalid_data_points = 0
 	"""Parameters to use to gather the most recent days price data """
