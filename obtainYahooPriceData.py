@@ -29,41 +29,41 @@ con = mdb.connect(db_host, db_user, db_pass, db_name)
 
 
 def get_Yahoos_daily_data(ticker, start_date, end_date):
-    """
-    Obtains price data from Yahoo Finance for the specificed company.
-    This function is currently set to get the most recent date, but is
-    capable of collecting all data within the specified start_date and
-    end_date parameters. The dates are in (YYYY, M, D) format
-    :param ticker: Ticker symbol that represents a company
-    :param start_date: Collect pricing data starting at this date
-    :param end_date: Collection of pricing data ends at this date
-    :return: OHLCAV data for the company
-    """
-    prices = []
-    # Create Yahoo URL to retrieve the CSV data for the given ticker.
-    # The month column starts at index 0 while the day column starts
-    # at index 1
-    yahoo_url = "http://ichart.finance.yahoo.com/table.csv?s=%s&a=%s&b=%s&c=%s&d=%s&e=%s&f=%s" % \
+	"""
+	Obtains price data from Yahoo Finance for the specificed company.
+	This function is currently set to get the most recent date, but is
+	capable of collecting all data within the specified start_date and
+	end_date parameters. The dates are in (YYYY, M, D) format
+	:param ticker: Ticker symbol that represents a company
+	:param start_date: Collect pricing data starting at this date
+	:param end_date: Collection of pricing data ends at this date
+	:return: OHLCAV data for the company
+	"""
+	prices = []
+	# Create Yahoo URL to retrieve the CSV data for the given ticker.
+	# The month column starts at index 0 while the day column starts
+	# at index 1
+	yahoo_url = "http://ichart.finance.yahoo.com/table.csv?s=%s&a=%s&b=%s&c=%s&d=%s&e=%s&f=%s" % \
 	            (ticker, start_date[1] - 1, start_date[2], start_date[0], end_date[1] - 1, end_date[2], end_date[0])
 
-    # Try connecting to Yahoo Finance and obtaining the data
-    # Record any failed tickers for manual review and print
-    # out the error message
-    try:
-        # We ignore the header with the [1:]
-        yahoo_data = urllib2.urlopen(yahoo_url).readlines()[1:]
+	# Try connecting to Yahoo Finance and obtaining the data
+	# Record any failed tickers for manual review and print
+	# out the error message
+	try:
+		# We ignore the header with the [1:]
+		yahoo_data = urllib2.urlopen(yahoo_url).readlines()[1:]
 
-        for line in yahoo_data:
-            p = line.strip().split(',')
-            prices.append((datetime.datetime.strptime(p[0], '%Y-%m-%d'),
+		for line in yahoo_data:
+			p = line.strip().split(',')
+			prices.append((datetime.datetime.strptime(p[0], '%Y-%m-%d'),
 					p[1], p[2], p[3], p[4], p[5], p[6]))
 
-    except Exception, e:
-        print "Could not download Yahoo data: %s" % e
-        prices = -1
-        failed_data_symbols.append(ticker)
+	except Exception, e:
+		print "Could not download Yahoo data: %s" % e
+		prices = -1
+		failed_data_symbols.append(ticker)
 
-    return prices
+	return prices
 
 
 def insert_data_into_db(data_vendor_id, symbol_id, daily_data):
@@ -74,7 +74,7 @@ def insert_data_into_db(data_vendor_id, symbol_id, daily_data):
 	:param symbol_id: What we use to relate the ticker and price data
 	:param daily_data: List of tuples of the OHLCAV data
 	"""
-	#TESTING SPACES
+
 	# Map daily price information to the columns of our database table
 	daily_data = [(data_vendor_id, symbol_id, d[0], timestamp, timestamp,
 	               d[1], d[2], d[3], d[4], d[5], d[6]) for d in daily_data]
