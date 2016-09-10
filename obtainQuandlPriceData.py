@@ -48,7 +48,7 @@ def get_Quandl_daily_data(ticker, start, end):
         prices = -1
         failed_data_symbols.append(ticker)
 
-    if valid_data_flag:
+    if valid_data_flag and not data.empty:
         # Map the dataframe into a list of tuples for easy
         # database insertion
         rows_of_data = [tuple(x) for x in data.to_records(index=True)]
@@ -61,6 +61,9 @@ def get_Quandl_daily_data(ticker, start, end):
             one_day_of_prices = (row[0], "%.4f" % row[1], "%.4f" % row[2],
             "%.4f" % row[3], "%.4f" % row[4], "%.4f" % row[11], row[5])
             prices.append(one_day_of_prices)
+    else:
+        prices = -1
+        failed_data_symbols.append(ticker)
 
     return prices
 
