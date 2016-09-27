@@ -111,17 +111,30 @@ def insert_data_into_db(con, price_data):
         price_data.to_sql(con=con, name='clean_prices3', if_exists='append', index=False, flavor='mysql')
 
 
-"""
 def delete_duplicates(con, table, symbol_id, price_date):
+    """
 
+    :param con:
+    :param table:
+    :param symbol_id:
+    :param price_date:
+    :return:
+    """
 
     with con:
         cur = con.cursor()
         # First query is to retrieve the id for the given symbol
-        # cur.execute("SELECT id FROM symbol WHERE ticker = %s", [ticker])
+        cur.execute("SELECT id FROM symbol WHERE ticker = %s", [ticker])
         cur.execute("DELETE %s FROM %s INNER JOIN (select")
 
-"""
+
+def insert_clean_data_into_db(con, price_data):
+    """
+    Insert Dataframe into SQL database
+    :param price_data: OHLCAV data
+    """
+    with con:
+        price_data.to_sql(con=con, name='clean_price', if_exists='append', index=False, flavor='mysql')
 
 
 def assign_starting_date(con, ticker, first_day):
