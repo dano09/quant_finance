@@ -1,93 +1,45 @@
-##########DELETE DUPLICATE ROWS FROM DATABASE QUERY##################
+1. Delete duplicate rows (every column) on daily_price table
 
 delete daily_price from daily_price inner join (select min(id) minid, data_vendor_id, symbol_id, price_date, created_date, last_updated_date, open_price, high_price, low_price, close_price, adj_close_price, volume from daily_price group by data_vendor_id, symbol_id, price_date, created_date, last_updated_date, open_price, high_price, low_price, close_price, adj_close_price, volume having count(1) > 1) as duplicates on (duplicates.data_vendor_id = daily_price.data_vendor_id and duplicates.symbol_id = daily_price.symbol_id and duplicates.price_date = daily_price.price_date and duplicates.created_date = daily_price.created_date and duplicates.last_updated_date = daily_price.last_updated_date and duplicates.open_price = daily_price.open_price and duplicates.high_price = daily_price.high_price and duplicates.low_price = daily_price.low_price and duplicates.close_price = daily_price.close_price and duplicates.adj_close_price = daily_price.adj_close_price and duplicates.volume = daily_price.volume and duplicates.minid <> daily_price.id)
 
-=======================================================================
+2. Select duplicate rows (on every column) on daily_price table
 
 select * from daily_price inner join 
 (select min(id) minid, data_vendor_id, symbol_id, price_date, created_date, last_updated_date, open_price, high_price, low_price, close_price, adj_close_price, volume from daily_price group by data_vendor_id, symbol_id, price_date, created_date, last_updated_date, open_price, high_price, low_price, close_price, adj_close_price, volume having count(1) > 1) as duplicates on (duplicates.data_vendor_id = daily_price.data_vendor_id and duplicates.symbol_id = daily_price.symbol_id and duplicates.price_date = daily_price.price_date and duplicates.created_date = daily_price.created_date and duplicates.last_updated_date = daily_price.last_updated_date and duplicates.open_price = daily_price.open_price and duplicates.high_price = daily_price.high_price and duplicates.low_price = daily_price.low_price and duplicates.close_price = daily_price.close_price and duplicates.adj_close_price = daily_price.adj_close_price and duplicates.volume = daily_price.volume and duplicates.minid <> daily_price.id)
 
-# Does DELETE on DUPLICATES where ALL OHLCAV IS THE SAME ==========
 
-delete daily_price from daily_price inner join 
-(select min(id) minid, data_vendor_id, symbol_id, price_date, open_price, high_price, low_price, close_price, adj_close_price, volume from daily_price group by data_vendor_id, symbol_id, price_date, open_price, high_price, low_price, close_price, adj_close_price, volume having count(1) > 1) as duplicates on (duplicates.data_vendor_id = daily_price.data_vendor_id and duplicates.symbol_id = daily_price.symbol_id and duplicates.price_date = daily_price.price_date and duplicates.open_price = daily_price.open_price and duplicates.high_price = daily_price.high_price and duplicates.low_price = daily_price.low_price and duplicates.close_price = daily_price.close_price and duplicates.adj_close_price = daily_price.adj_close_price and duplicates.volume = daily_price.volume and duplicates.minid <> daily_price.id);
-
-==========DELETES ALL DUPLICATES JUST ON SAME PRICE DATE for DAILY PRICE TABLE=========================================================
+3. Delete all duplicates that have same price date on daily_price table
 
 delete daily_price from daily_price inner join 
 (select min(id) minid, data_vendor_id, symbol_id, price_date from daily_price group by data_vendor_id, symbol_id, price_date having count(1) > 1) as duplicates on (duplicates.data_vendor_id = daily_price.data_vendor_id and duplicates.symbol_id = daily_price.symbol_id and duplicates.price_date = daily_price.price_date and duplicates.minid <> daily_price.id);
 
 
-
-
-==== DELETE ALL DUPLICATES JUST ON SAME PRICE DATE FOR CLEAN_PRICES TABLE==============================================================
+4. Delete all duplicates on same price date for clean_prices table
 
 delete clean_prices from clean_prices inner join 
 (select min(id) minid, symbol_id, price_date from clean_prices group by symbol_id, price_date having count(1) > 1) as duplicates on (duplicates.symbol_id = clean_prices.symbol_id and duplicates.price_date = clean_prices.price_date and duplicates.minid <> clean_prices.id);
+
+5. Select all duplicates on same price date for clean_prices table
 
 select * from clean_prices inner join 
 (select min(id) minid, symbol_id, price_date from clean_prices group by symbol_id, price_date having count(1) > 1) as duplicates on (duplicates.symbol_id = clean_prices.symbol_id and duplicates.price_date = clean_prices.price_date and duplicates.minid <> clean_prices.id);
 
 
-
-
-
-
-
-
-DELETE FROM persons WHERE id NOT IN (SELECT MIN(id) FROM persons GROUP BY name)
-
-=======================================================================
+6. Select duplicate rows?
 
 select * from daily_price where id NOT IN (SELECT MIN(id) FROM daily_price)
 
-=======================================================================
+7. looks at days, and their count of rows (helps to identify duplicates)
 
-#DETERMINE whate days have NDUPLICATES:
-select price_date, count(*) from clean_prices2 where data_vendor_id = '1' GROUP BY price_date;
+select price_date, count(*) from daily_price where data_vendor_id = '2' GROUP BY price_date;
 
-=======================================================================
+8. Look at duplicate rows by vendor
 
-#Select duplicate days by vendor
 select price_date, count(*) from daily_price where data_vendor_id = '1' GROUP BY price_date HAVING count(*) > 504;
 
-=======================================================================
+9. Clear a table
 
- insert into to_delete(min_id, data_vendor_id, price_date) select MIN(id), data_vendor_id, price_date from daily_price group by price_date having count(*) > 504;
-
-TRUNCATE TABLE clean_prices;
+TRUNCATE TABLE clean_prices where data_vendor_id = '2';
 
 
 
-
-	CREATE TABLE `symbol2` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `exchange_id` int NULL,
-  `ticker` varchar(32) NOT NULL,
-  `instrument` varchar(64) NOT NULL,
-  `name` varchar(255) NULL,
-  `sector` varchar(255) NULL,
-  `currency` varchar(32) NULL,
-  `created_date` datetime NOT NULL,
-  `last_updated_date` datetime NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `index_exchange_id` (`exchange_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
-
-
-
-CREATE TABLE `clean_prices2` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `symbol_id` int NOT NULL,
-  `price_date` datetime NOT NULL,
-  `created_date` datetime NOT NULL,
-  `last_updated_date` datetime NOT NULL,
-  `open_price` decimal(19,4) NULL,
-  `high_price` decimal(19,4) NULL,
-  `low_price` decimal(19,4) NULL,
-  `close_price` decimal(19,4) NULL,
-  `adj_close_price` decimal(19,4) NULL,
-  `volume` bigint NULL,
-  PRIMARY KEY (`id`),
-  KEY `index_synbol_id` (`symbol_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
