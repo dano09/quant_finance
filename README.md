@@ -1,24 +1,33 @@
 # Quantitative Backtesting
 
-This project details the creation of a Securities database that will be used in analysis of financial securities and also to backtest algorithmic trading strategies. The majority of the setup is completed with open source software, a MySQL database and the Python scripting language. 
+This project details the creation of a backtesting engine that will be used in analysis of financial securities and also to backtest algorithmic trading strategies. The majority of the setup is completed with open source software, a MySQL database and the Python scripting language. Some additional frameworks include Pandas, and Numpys.
 
-INTRODUCTION:
+Most of the scripts provided have the functionality to run daily as chron tasks, or used over a lookback period to gather and clean historical data. If a script has this functionality, please review the main method for adjusting the date parameters.
 
-1 - To start, I have created 3 tables in a MySQL Database which is stored on my local computer for the time being. As you can see below, I have created 3 tables, Vendor, Daily_Price, and Symbol.
+For example, I would adjust the parameters to get price data for the companies in the S&P500 from January 1st, 1998 up to September 26th, 2016. I would then set the scripts up to just run over a single date, and create a cron task to have it run everyday.
 
-![Alt text](https://github.com/dano09/quant_finance/blob/master/images/database_schema.PNG "Schema")
+The first section of this project is retrieving and cleaning data. A of this writing, the work flow is as follows:
 
-2 - Running obtainSymbols.py will scrape the ticker symbols for each company from the S&P500 index and save the ticker symbols to my databases Symbol table. I run this script once a month through Task Scheduler (I use Windows 10) to make sure I collect price data for the largest companies. I have included a screenshot of a small section of the Symbol table below.
+PART 1: Get historical data (1998-2016)
+1. Create needed database tables
+2. Run obtainSymbols.py [Collect tickers of companies we wish to analyze]
+3. Run obtainYahooPriceData
+4. Run obtainQuandlPriceData
+5. Run cleanPricingData
+6. Run fillZeros
 
-![Alt text](https://github.com/dano09/quant_finance/blob/master/images/symbolTable.PNG "Schema")
+This will generally take awhile. For example obtainYahooPriceData took about 10 minutes (it collects over 2 million data points). This process is only to be done once though, and did not deem worthy of a performance overhaul.
 
-NOTE: Once a company's symbol is added to the database, I will continue to collect its pricing data even if it's removed from the S&P500 list. I have no intent on modeling just the SP500 but rather used the index as an approximation to the market. This helps prevent survivorship bias in our backtesting, which can result in inflated returns for trading strategies. For our purposes the more data points we have, the better.
+PART 2: Collecting daily data 
+Next adjust the date parameters for any scripts that are required and set cron tasks for the following scripts.
+1. obtainSymbols.py (Runs once a month)
+2. Run obtainYahooPriceData (Everyday at 9:00PM)
+3. Run obtainQuandlPriceData (Everyday at 9:05PM)
+4. Run cleanPricingData (Everyday at 9:15PM)
+5. Run fillZeros (Everyday at 9:30)
 
-3 - Finally we will run the obtainPriceData.py to actually collect the pricing data. The pricing data we are interested in is the daily Open, Low, Close, High, Adjusted_Close_Price and Volume (OLCHAV) data. The script will iterate through the ticker symbols, and connect to Yahoo Finance for the CSV data. The script proceeds to add the data to the Daily_Price table of our database. Below is a snapshot of some of Googles recent OLCHAV data.
+Collecting data from Yahoo and Quandl can go in any order, but cleaningPriceData.py can only work after data has been collected from both vendors. Finally, fillZeros.py is made to run after cleanPricingData.py
 
+I have started a blog (jdano.com) that will provide more documentation on each script and the algorithms that were implemented. This blog should be live sometime by the end of October, 2016.
 
-![Alt text](https://github.com/dano09/quant_finance/blob/master/images/price_data_from_google.PNG "Schema")
-
-This script is ran everyday through windows Task scheduler. Logic is in place to avoid adding null data points for weekends and holidays. If for some reason the connection to Yahoo's servers fail, the ticker for that company will be saved in a file that is stored on my local C Drive. My backlog has a maintenance script to handle missing data values, since the accuracy of pricing data is pertinent to creating accurate models. Much more on data wrangling to come.
-
-CONCLUSION: So far we have a general process for collecting pricing data for hundreds of companies. We are well on our way to having the infrastructure in place for analyzing securities. Pricing data is far from simple however, and it is imperative we verify the correctness of the data to avoid errors and also to minimize biases. Future work will involve cleaning the data and accounting for potential problems such as how to incorporate M/A, pricing errors from vendors, missing data, and incorrect data.
+DISCLAIMER: Everything written here is the IP of Justin Dano, and is in no way involved with his employer. This project has coalesced from what Justin has learned from self-study. While the work here details how one could make trading algorithms, it is not intended to be used with real money.
