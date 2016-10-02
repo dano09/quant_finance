@@ -6,7 +6,7 @@ Most of the scripts provided have the functionality to run daily as chron tasks,
 
 For example, I would adjust the parameters to get price data for the companies in the S&P500 from January 1st, 1998 up to September 26th, 2016. I would then set the scripts up to just run over a single date, and create a cron task to have it run everyday.
 
-The first section of this project is retrieving and cleaning data. A of this writing, the work flow is as follows:
+The first section of this project is retrieving and cleaning data. As of this writing, the work flow is as follows:
 
 PART 1: Get historical data (1998-2016)
 1. Create needed database tables
