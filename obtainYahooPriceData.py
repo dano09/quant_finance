@@ -1,10 +1,13 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+"""
+Author: Justin Dano 8/6/2016
 
-# Author: Justin Dano 8/6/2016
-# This script was inspired by Michael Halls-Moore articles on Quantstart.com
+This script makes a call to Yahoo Finance to collect price data (Open, High, Low, Close, Adjusted Close, Volume)
+henceforth referred to as OHLCAV data, for every company in the S&P500 and saves it to the database.
+The script was inspired by Michael Halls-Moore articles on Quantstart.com
+"""
 
-import datetime
 import urllib2
 import httplib
 import os.path
@@ -16,7 +19,6 @@ from SharedFunctionsLib import *
 # yahoo data.
 httplib.HTTPConnection._http_vsn = 10
 httplib.HTTPConnection._http_vsn_str = 'HTTP/1.0'
-timestamp = datetime.datetime.utcnow()
 failed_data_symbols = []
 con = get_db_connection()
 
@@ -34,7 +36,7 @@ def get_yahoos_daily_data(ticker, start_date, end_date):
     """
     prices = []
     # Create Yahoo URL to retrieve the CSV data for the given ticker. The month column starts at index 0 while the day
-    # column starts at index 0 while the day column starts at index 1
+    # column starts at index 1
     yahoo_url = "http://ichart.finance.yahoo.com/table.csv?s=%s&a=%s&b=%s&c=%s&d=%s&e=%s&f=%s" % \
                 (ticker, start_date[1] - 1, start_date[2], start_date[0], end_date[1] - 1, end_date[2], end_date[0])
 
@@ -62,33 +64,6 @@ def get_yahoos_daily_data(ticker, start_date, end_date):
     return prices
 
 
-
-def insert_data_into_db(data_vendor_id, symbol_id, daily_data):
-    """
-    Takes the OHLCAV data for a specific company, over pre-defined
-    time range and adds it to the Database.
-    :param data_vendor_id: Int that identifies the vendor
-    :param symbol_id: Int that identifies the company
-    :param daily_data: List of tuples of the OHLCAV data
-    """
-
-    # Map daily price information to the columns of our database table
-    daily_data = [(data_vendor_id, symbol_id, d[0], timestamp, timestamp,
-                   d[1], d[2], d[3], d[4], d[5], d[6]) for d in daily_data]
-
-    # Create the insert strings
-    column_str = """data_vendor_id, symbol_id, price_date, created_date,
-                    last_updated_date, open_price, high_price, low_price,
-                    close_price, volume, adj_close_price"""
-    insert_str = ("%s, " * 11)[:-2]
-    query_string = "INSERT INTO daily_price (%s) VALUES (%s)" % (column_str, insert_str)
-
-    # Connect with MySQL database and perform the insert query
-    with con:
-        cur = con.cursor()
-        cur.executemany(query_string, daily_data)
-
-
 def generate_failure_file():
     """
     Utility method to create a file detailing the failed tickers
@@ -107,18 +82,16 @@ def generate_failure_file():
 
 if __name__ == "__main__":
     start_time = time.time()
-    # Loop over the tickers and insert the daily historical
-    # data into the database
     tickers = retrieve_db_tickers(con)
 
     """Parameters used to gather price data over a period of time """
     # Format: (YYYY, M, D)
     start_date = (1998, 1, 1)
-    end_date = (2016, 9, 23)
+    end_date = (2016, 9, 30)
 
     """Parameters to use to gather the most recent days price data """
-    # start_date = datetime.date.today().timetuple()[0:3]
-    # end_date = datetime.date.today().timetuple()[0:3]
+    #start_date = datetime.date.today().timetuple()[0:3]
+    #end_date = datetime.date.today().timetuple()[0:3]
 
     for t in tickers:
         print "Adding data for %s" % t[1]
@@ -128,9 +101,9 @@ if __name__ == "__main__":
         if yahoo_data == -1:
             continue
 
-        # The connection was a success
+        # The connection was a success, insert data into the database
         elif yahoo_data:
-            insert_data_into_db('1', t[0], yahoo_data)
+            insert_data_into_db(con, '1', t[0], yahoo_data)
             # Sleep to prevent over-flooding of the Yahoo Servers
             time.sleep(.6)
 

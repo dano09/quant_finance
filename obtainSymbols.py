@@ -1,14 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+"""
+Author: Justin Dano 8/6/2016
 
-# Author: Justin Dano 8/6/2016
-# This script was inspired by Michael Halls-Moore articles on Quantstart.com
-
+This script scrapes S&P500 tickers from wikipedia and saves it to the database. The script was inspired by
+Michael Halls-Moore articles on Quantstart.com
+"""
 import datetime
 import lxml.html
 from urllib2 import urlopen
 from math import ceil
 from SharedFunctionsLib import *
+
+con = get_db_connection()
 
 
 def scrape_sp500_symbols():
@@ -89,8 +93,6 @@ def insert_sp500_symbols(symbols):
 
 
 if __name__ == "__main__":
-    con = get_db_connection()
-
     # 1.Scrape ticker data for the current companies existing in the S&P500 index from Wikipedia
     symbols = scrape_sp500_symbols()
 

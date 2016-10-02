@@ -3,10 +3,8 @@
 """
 Author: Justin Dano 8/21/2016
 
-This script cleans the price data by cross referencing 
-OHLCAV data from vendors Yahoo Finance and Quandl. This
-script is designed to be ran everyday, but has the ability
-to clean data over a range of dates by adjusting the 
+This script cleans the price data by cross referencing OHLCAV data from vendors Yahoo Finance and Quandl. This
+script is designed to be ran everyday, but has the ability to clean data over a range of dates by adjusting the
 @{start} and @{end} parameters in the main method.
 """
 import time
@@ -19,44 +17,6 @@ from SharedFunctionsLib import *
 
 con = get_db_connection()
 timestamp = datetime.date.today()
-
-
-def retrieve_price_data(ticker, vendor_id, start, end):
-    """
-    Retrive price data from the database for the specific
-    ticker over the specified range.
-    :param ticker: The company's ticker symbol
-    :param vendor_id: The vendor we grab the price data from
-    :param start: We grab data starting at this date
-    :param end: The data ends at this date
-    :return:Dataframe of all the price data
-    """
-    with con:
-        cur = con.cursor()
-        # First query is to retrieve the id for the given symbol
-        cur.execute("SELECT id FROM symbol WHERE ticker = %s", [ticker])
-        ticker_id = cur.fetchall()
-        ticker_id = ticker_id[0][0]
-        # Second query gathers OHLCAV data
-        cur.execute("SELECT * FROM daily_price WHERE \
-		symbol_id = %s AND data_vendor_id = %s \
-		AND price_date BETWEEN %s AND %s", (ticker_id, vendor_id, start, end))
-
-        # Return none if no data exists for the ticker within the specified
-        # time frame, otherwise return a dataframe with the OHLCAV data
-        if not cur.rowcount:
-            if vendor_id == 1:
-                print "Yahoo had no price data available for " + str(start)
-            else:
-                print "Quandl had no price data available for " + str(start)
-            price_data = None
-        else:
-            price_data = pd.DataFrame(list(cur.fetchall()))
-            price_data.columns = ['id', 'symbol_id', 'vendor_id', 'price_date', 'created_date',
-                                  'last_updated_date', 'open_price', 'high_price', 'low_price', 'close_price',
-                                  'adj_close_price', 'volume']
-
-        return price_data
 
 
 def verify_price(symbol_id, y_data, q_data):
@@ -86,7 +46,7 @@ def verify_price(symbol_id, y_data, q_data):
         # Make sure to exclude American holidays
         if isbday(date, holidays=holidays.US()):
             zero_counter = 0
-            number_of_data_points += 5
+            number_of_data_points += 4
             print "Processing prices for: " + date.strftime("%Y-%m-%d")
             new_data_row = [symbol_id, date, timestamp, timestamp]
             y_daily_price = None
@@ -106,20 +66,20 @@ def verify_price(symbol_id, y_data, q_data):
             # Determine if either vendor is missing data
             temp_prices = check_date(date, y_daily_price, q_daily_price)
 
-            # Case 1: Only one vendor had data for the specific date,
-            # so we will use that vendors data
+            # Case 1: Only one vendor had data for the specific date, so we will use that vendors data
             if isinstance(temp_prices, pd.DataFrame):
                 ohlcav_data_row = format_data(temp_prices)
                 new_data_row.extend(ohlcav_data_row)
-                zero_counter = 5
-            # Case 2: Neither vendor had data, so we assign zeros
-            # to all values for this date
+                zero_counter = 4
+
+            # Case 2: Neither vendor had data, so we assign zeros to all values for this date
             elif not temp_prices:
                 print "Neither Vendor had data for " + date.strftime(
                     "%Y-%m-%d") + " so we will fill the days price data with zeros"
                 new_data_row.extend([0, 0, 0, 0, 0, 0])
-                # Excluding Volume
-                zero_counter = 5
+                # Excluding Volume and Adjusted Close
+                zero_counter = 4
+
             # Case 3: Compare the OHLCAV data
             else:
                 yOHLCAV = format_data(y_daily_price)
@@ -152,40 +112,36 @@ def compare_price_data(yOHLCAV, qOHLCAV):
     :param qOHLCAV: Quandl price data
     :return: List of price data that has been cross referenced
     """
-    volume_data = 0
     zero_counter = 0
     data_row = []
-    for i in range(len(yOHLCAV)):
-        '''
-        For volume, Quandl is used by default. Its an aggregate for
-        all US volume over all exchanges. Yahoo does not provide
-        information on how it derives its volume, so we stick with Quandl.
-        '''
-        if isinstance(yOHLCAV[i], long):
-            volume_data = qOHLCAV[i]
-        # All other values
+    """
+    Ignoring Adjusted Price and Volume since they are almost never identical for historic data.
+    We use Quandl by default. Yahoo rounds its Adjusted Price valuations, and its volume is known be incorrect
+    """
+    for i in range(len(yOHLCAV) - 2):
+        # Easy case, the values are equivalent
+        if yOHLCAV[i] == qOHLCAV[i]:
+            data_row.append(yOHLCAV[i])
         else:
-            # Easy case, the values are equivalent
-            if yOHLCAV[i] == qOHLCAV[i]:
-                data_row.append(yOHLCAV[i])
+            precision_price = check_precision(yOHLCAV[i], qOHLCAV[i])
+            # If one of the values is more precise, use that one
+            if precision_price:
+                data_row.append(precision_price)
             else:
-                precision_price = check_precision(yOHLCAV[i], qOHLCAV[i])
-                # If one of the values is more precise, use that one
-                if precision_price:
-                    data_row.append(precision_price)
+                if yOHLCAV[i] == 0:
+                    data_row.append(qOHLCAV[i])
+                elif qOHLCAV[i] == 0:
+                    data_row.append(yOHLCAV[i])
+                # Cannot determine correct value, so assign
+                # zero. We will use the spike filter to pad
+                # the inconsistent data points
                 else:
-                    if yOHLCAV[i] == 0:
-                        data_row.append(qOHLCAV[i])
-                    elif qOHLCAV[i] == 0:
-                        data_row.append(yOHLCAV[i])
-                    # Cannot determine correct value, so assign
-                    # zero. We will use the spike filter to pad
-                    # the inconsistent data points
-                    else:
-                        data_row.append(0)
-                        zero_counter += 1
+                    data_row.append(0)
+                    zero_counter += 1
 
-    data_row.append(volume_data)
+    # Add back quandl's adjusted close and volume
+    data_row.append(qOHLCAV[-2])
+    data_row.append(qOHLCAV[-1])
     return data_row, zero_counter
 
 
@@ -297,7 +253,7 @@ if __name__ == "__main__":
     """Parameters to use to gather price data over a period of time """
     # Format: 'YYYY-MM-DD'
     start = '1998-01-01'
-    end = '2016-09-23'
+    end = '2016-09-30'
 
     """Parameters to use to gather the most recent days price data """
     #start = datetime.date.today().strftime("%Y-%m-%d")
@@ -315,8 +271,8 @@ if __name__ == "__main__":
         print "Cleaning price data for ticker: " + t[1]
 
         # Gather initial datasets from both vendors
-        yahoo_data = retrieve_price_data(t[1], 1, start, end)
-        quandl_data = retrieve_price_data(t[1], 2, start, end)
+        yahoo_data = retrieve_price_data(con, t[1], 1, start, end)
+        quandl_data = retrieve_price_data(con, t[1], 2, start, end)
 
         if isinstance(yahoo_data, pd.DataFrame) and isinstance(quandl_data, pd.DataFrame):
             # Clean data and add to the database
@@ -324,7 +280,9 @@ if __name__ == "__main__":
             total_data_points += stats_and_data[1]
             invalid_data_points += stats_and_data[2]
 
-        insert_clean_data_into_db(con, stats_and_data[0])
+            insert_clean_data_into_db(con, stats_and_data[0])
+        else:
+            print "Ticker data could not be found, skipping ticker"
 
     # Compute and Print statistics
     compute_stats(total_data_points, invalid_data_points)

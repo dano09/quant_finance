@@ -2,18 +2,17 @@
 # -*- coding: utf-8 -*-
 """
 Author: Justin Dano 8/10/2016
-This script collects and saves QUANDL price data for
-companies in the S&P500
+
+This script collects price data (Open, High, Low, Close, Adjusted Close, and Volume) henceforth referred to as
+OHLCAV data, from QUANDL using their API, and saves it to the database. It does this for each company in the S&P500.
 """
 import time
 import quandl
-import datetime
 import os.path
 import math
 from SharedFunctionsLib import *
 
-timestamp = datetime.datetime.utcnow()
-quandl.ApiConfig.api_key = 'zmdzi5zBSfY6PsjDvvtV'
+quandl.ApiConfig.api_key = '***'
 failed_data_symbols = []
 con = get_db_connection()
 
@@ -78,31 +77,6 @@ def remove_nan_values(daily_prices):
     return daily_prices
 
 
-def insert_data_into_db(data_vendor_id, symbol_id, daily_data):
-    """
-    Takes the OHLCAV data for a specific company, over pre-defined
-    time range and adds it to the Database.
-    :param data_vendor_id:
-    :param symbol_id:
-    :param daily_data:
-    """
-    # Map daily price data to the columns of our database table
-    daily_data = [[data_vendor_id, symbol_id, d[0], timestamp, timestamp,
-    d[1], d[2], d[3], d[4], d[5], d[6]] for d in daily_data]
-
-    # Build the parametrized query string
-    column_str = """data_vendor_id, symbol_id, price_date, created_date,
-          last_updated_date, open_price, high_price, low_price,
-          close_price, adj_close_price, volume"""
-    insert_str = ("%s, " * 11)[:-2]
-    query_string = "INSERT INTO daily_price (%s) VALUES (%s)" % (column_str, insert_str)
-
-    # Connect with MySQL database and perform the insert query
-    with con:
-        cur = con.cursor()
-        cur.executemany(query_string, daily_data)
-
-
 def generate_failure_file():
     """
     Utility: Creates file for failed tickers
@@ -121,30 +95,28 @@ def generate_failure_file():
 
 def format_ticker(ticker):
     """
-    Utility: Some symbols from datbase need refactored
+    Utility: Some symbols from database need refactored
     to work for Quandl API.
     :param ticker: A ticker symbol
     :return: The new ticker name
     """
     if '-' in ticker:
         symbol = ticker.replace("-","_")
+    elif '.' in ticker:
+        symbol = ticker.replace(".","_")
     else:
         symbol = ticker
     return symbol
 
 
 if __name__ == "__main__":
-    """
-    For each company, pull the pricing data from
-    Quandl's API and save it to the database
-    """
     start_time = time.time()
     tickers = retrieve_db_tickers(con)
 
     """Parameters to use to gather price data over a period of time """
     # Format: 'YYYY-MM-DD'
     start = '1998-01-01'
-    end = '2016-09-23'
+    end = '2016-09-30'
 
     """Parameters to use to gather the most recent days price data """
     #start = datetime.date.today().strftime("%Y-%m-%d")
@@ -160,7 +132,7 @@ if __name__ == "__main__":
 
         # The data retrieval was a success
         elif quandl_data:
-            insert_data_into_db('2', t[0], quandl_data)
+            insert_data_into_db(con, '2', t[0], quandl_data)
 
         # No data implies non-business day
         else:
