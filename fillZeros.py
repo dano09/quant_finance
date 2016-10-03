@@ -8,7 +8,6 @@ two vendors Yahoo Finance and Quandl. Can be used on historical data, or setup t
 If ran everyday, it interpolates the value four days prior to today's date.
 """
 import time
-import datetime
 import numpy as np
 import math
 from SharedFunctionsLib import *
@@ -16,6 +15,7 @@ import holidays
 from bdateutil import isbday
 
 timestamp = datetime.datetime.utcnow()
+con = get_db_connection()
 
 
 def one_day(start_day):
@@ -90,6 +90,7 @@ def interpolate_data(column, data_with_zeros):
     :return: A new Series object that has been processed.
     """
     new_series = data_with_zeros[column].astype(float).interpolate()
+
     # If the first value is NAN, we find the next day (closest in time) that is non-NAN and fill it with that value
     if math.isnan(new_series[0]):
         for row in new_series.iteritems():
@@ -101,24 +102,18 @@ def interpolate_data(column, data_with_zeros):
 
 
 if __name__ == "__main__":
-    """
-    Interpolate any zero or nan values that were created from inconsistent pricing data from our
-    two vendors Yahoo Finance and Quandl. Can be used on historical data, or setup to be ran everyday.
-    If ran everyday, it interpolates the value four days prior to todays date.
-    """
     start_time = time.time()
     history_flag = False
-    con = get_db_connection()
     tickers = retrieve_db_tickers(con)
 
     """Parameters used to gather price data over a period of time """
     # Format: 'YYYY-MM-DD'
-    start = '1998-01-01'
-    end = '2016-09-30'
+    #start = '2016-09-28'
+    #end = '2016-09-30'
 
     """Parameters to use to gather the most recent days price data """
-    # start = (datetime.datetime.now() - datetime.timedelta(days=4))
-    # end = (datetime.datetime.now() - datetime.timedelta(days=4))
+    start = (datetime.datetime.now() - datetime.timedelta(days=4))
+    end = (datetime.datetime.now() - datetime.timedelta(days=4))
 
     # Used as Cron script
     if one_day(start):
