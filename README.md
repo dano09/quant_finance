@@ -6,7 +6,7 @@ Most of the scripts provided have the functionality to run daily as chron tasks,
 
 For example, I would adjust the parameters to get price data for the companies in the S&P500 from January 1st, 1998 up to September 26th, 2016. I would then set the scripts up to just run over a single date, and create a cron task to have it run everyday.
 
-The first section of this project is retrieving and cleaning data. A of this writing, the work flow is as follows:
+The first section of this project is retrieving and cleaning data. As of this writing, the work flow is as follows:
 
 PART 1: Get historical data (1998-2016)
 1. Create needed database tables
@@ -30,4 +30,4 @@ Collecting data from Yahoo and Quandl can go in any order, but cleaningPriceData
 
 I have started a blog (jdano.com) that will provide more documentation on each script and the algorithms that were implemented. This blog should be live sometime by the end of October, 2016.
 
-DISCLAIMER: Everything written here is the IP of Justin Dano, and is in no way involved with his employer. This project has coalesced from what Justin has learned from self-study. While the work here details how one could make trading algorithms, it is not intended to be used with real money.
+DISCLAIMER: All software and documentation is the intellecutal property of myself (Justin Dano), and is in no way involved with my employer. This project has coalesced from what I have learned from independent research and self-study. While the work here details how one could make trading algorithms, it is not intended to be used with real money.
