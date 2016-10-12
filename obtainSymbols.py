@@ -65,7 +65,7 @@ def filter_symbols(symbols):
     # Now add any additional symbols not yet included in the
     # database from the SP500 wiki page
     for s in symbols:
-        if s[0] not in unique_symbols:
+        if s[1] not in unique_symbols:
             print(str(s[2]) + " will be added to the database!")
             new_symbols.append(s)
 
