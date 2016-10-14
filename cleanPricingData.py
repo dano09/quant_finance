@@ -32,6 +32,7 @@ def verify_price(symbol_id, y_data, q_data):
     :return: Dataframe of the cross referenced prices from Yahoo and Quandl
     """
     number_of_data_points = 0
+    number_of_days = 0
     invalid_data_points = 0
     verified_prices = pd.DataFrame(columns=['price_date',
                                             'created_date', 'last_updated_date', 'open_price', 'high_price',
@@ -47,6 +48,7 @@ def verify_price(symbol_id, y_data, q_data):
         if isbday(date, holidays=holidays.US()):
             zero_counter = 0
             number_of_data_points += 4
+            number_of_days += 1
             print "Processing prices for: " + date.strftime("%Y-%m-%d")
             new_data_row = [symbol_id, date, timestamp, timestamp]
             y_daily_price = None
@@ -101,7 +103,7 @@ def verify_price(symbol_id, y_data, q_data):
         else:
             print str(date.strftime("%Y-%m-%d")) + " is a US holiday!"
 
-    stats_and_data = [verified_prices, number_of_data_points, invalid_data_points]
+    stats_and_data = [verified_prices, number_of_data_points, invalid_data_points, number_of_days]
     return stats_and_data
 
 
@@ -234,26 +236,31 @@ def format_data(daily_price_data):
             "%.4f" % daily_price_data['adj_close_price'], long(daily_price_data['volume'])]
 
 
-def compute_stats(total_points, invalid_points):
+def print_stats(total_points, invalid_points, tickers, days, first_day, last_day):
     """
-    Compute and display the average amount of invalid data points
-    :param total_points: Number of price data compared between the two vendors
-    :param invalid_points: Count of invalid price data points
+    Print out stats of script parameters
     """
-    print "Total Pricing Data points: " + str(total_points)
-    print "Total data points that were invalid: " + str(invalid_points)
-    print "Discrepancy percentage: " + str("%.2f" % ((float(invalid_points) / float(total_points)) * 100)) + "%"
+    print "\nStarting date:            " + str(first_day)
+    print "Ending date:              " + str(last_day)
+    print "Total Business days:      " + str(days)
+    print "Total Companies analyzed: " + str(tickers)
+    print "Total OHLC data points:   " + str(total_points)
+    print "Inconsistent data points: " + str(invalid_points)
+    print "Discrepancy percentage:   " + str("%.2f" % ((float(invalid_points) / float(total_points)) * 100)) + "%"
 
 
 if __name__ == "__main__":
     start_time = time.time()
     total_data_points = 0
     invalid_data_points = 0
+    total_tickers = 0
+    total_days = 0
 
     """Parameters to use to gather price data over a period of time """
     # Format: 'YYYY-MM-DD'
     start = '1998-01-01'
-    end = '2016-09-30'
+    end = '2016-10-13'
+
 
     """Parameters to use to gather the most recent days price data """
     #start = datetime.date.today().strftime("%Y-%m-%d")
@@ -268,22 +275,25 @@ if __name__ == "__main__":
     tickers = retrieve_db_tickers(con)
     # Collect data for each company
     for t in tickers:
+        total_tickers += 1
         print "Cleaning price data for ticker: " + t[1]
 
         # Gather initial datasets from both vendors
         yahoo_data = retrieve_price_data(con, t[1], 1, start, end)
         quandl_data = retrieve_price_data(con, t[1], 2, start, end)
 
-        if isinstance(yahoo_data, pd.DataFrame) and isinstance(quandl_data, pd.DataFrame):
+        if isinstance(yahoo_data, pd.DataFrame) or isinstance(quandl_data, pd.DataFrame):
             # Clean data and add to the database
             stats_and_data = verify_price(t[0], yahoo_data, quandl_data)
             total_data_points += stats_and_data[1]
             invalid_data_points += stats_and_data[2]
 
+            if stats_and_data[3] > total_days:
+                total_days = stats_and_data[3]
+
             insert_clean_data_into_db(con, stats_and_data[0])
         else:
             print "Ticker data could not be found, skipping ticker"
 
-    # Compute and Print statistics
-    compute_stats(total_data_points, invalid_data_points)
-    print("--- %s seconds ---" % (time.time() - start_time))
+    print_stats(total_data_points, invalid_data_points, total_tickers, total_days, start, end)
+    print("Time to complete:         %s seconds" % round((time.time() - start_time), 4))
