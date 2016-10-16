@@ -53,10 +53,13 @@ def get_yahoos_daily_data(ticker, start_date, end_date, cron_flag):
             first_day = yahoo_data[-1].strip().split(',')
             assign_starting_date(con, ticker, first_day[0])
 
+        # p[1] = Open   p[2] = High
+        # p[3] = Low    p[4] = Close
+        # p[5] = Volume p[6] = Adjusted_Close
         for line in yahoo_data:
             p = line.strip().split(',')
             prices.append((datetime.datetime.strptime(p[0], '%Y-%m-%d'),
-                           p[1], p[2], p[3], p[4], p[5], p[6]))
+                           p[1], p[2], p[3], p[4], p[6], p[5]))
 
     except Exception, e:
         print "Could not download Yahoo data: %s" % e
