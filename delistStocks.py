@@ -17,6 +17,7 @@ case this script happens to run on a 3 day weekend.
 """
 
 import datetime
+
 from SharedFunctionsLib import *
 
 timestamp = datetime.datetime.utcnow()
@@ -30,6 +31,7 @@ def get_month_of_data(stock):
     """
     today = datetime.date.today()
     last_month_date = today - datetime.timedelta(days=30)
+
     data = retrieve_clean_data(con, stock, last_month_date, today)
     return data
 
@@ -41,19 +43,22 @@ def check_for_delisted_stocks(data):
     :return: Either a Date object, which indicates the last day a company was live,
     or None if the company is still live
     """
+    delisted_day = None
     today = datetime.date.today()
-    last_date = data.loc[len(data)-1][2]
+    if isinstance(data, pd.DataFrame):
 
-    # We use margin to handle the case that the script runs on a weekend. Exchanges can only be closed for a maximum
-    # of three days.
-    margin = datetime.timedelta(days=4)
+        # Get the 2nd column (price_date) from the last row of the dataframe
+        last_date = data.loc[len(data)-1][2]
 
-    live_flag = today - margin <= last_date
+        # We use margin to handle the case that the script runs on a weekend. Exchanges can only be closed for a maximum
+        # of three days.
+        margin = today - datetime.timedelta(days=4)
 
-    if not live_flag:
-        return last_date
-    else:
-        return None
+        # Assign last day if not recent price data could be found
+        if not margin <= last_date:
+            delisted_day = last_date
+
+    return delisted_day
 
 
 if __name__ == "__main__":
@@ -63,6 +68,7 @@ if __name__ == "__main__":
     for ticker in tickers:
         month_of_data = get_month_of_data(ticker[1])
         delisted_day = check_for_delisted_stocks(month_of_data)
+
         if delisted_day:
             print "Ticker: " + str(ticker[1]) + "'s last day is : " + str(delisted_day)
             update_symbols(con, ticker[1], delisted_day)
