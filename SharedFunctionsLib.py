@@ -2,6 +2,7 @@ import pandas as pd
 import MySQLdb as mdb
 import datetime
 
+
 def get_db_connection():
     """
     Utility method that provides database credentials
@@ -94,9 +95,6 @@ def retrieve_data_with_zeros(con, ticker, start, end):
             price_data = None
         else:
             price_data = pd.DataFrame(list(cur.fetchall()))
-            print price_data
-            print type(price_data)
-            print price_data.columns
             price_data.columns = ['id', 'symbol_id', 'price_date', 'created_date',
                                   'last_updated_date', 'open_price', 'high_price', 'low_price', 'close_price',
                                   'adj_close_price', 'volume']
@@ -121,7 +119,7 @@ def retrieve_clean_data(con, ticker, start, end):
         ticker_id = ticker_id[0][0]
 
         # Second query gathers OHLCAV data
-        cur.execute("SELECT * FROM clean_price_test "
+        cur.execute("SELECT * FROM cleaned_price "
                     "WHERE symbol_id = %s AND price_date >= %s AND price_date <= %s", (ticker_id, start, end))
 
         # Return none if no data exists for the ticker within the specified
