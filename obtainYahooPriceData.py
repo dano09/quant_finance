@@ -23,7 +23,7 @@ failed_data_symbols = []
 con = get_db_connection()
 
 
-def get_yahoos_daily_data(ticker, start_date, end_date):
+def get_yahoos_daily_data(ticker, start_date, end_date, cron_flag):
     """
     Obtains price data from Yahoo Finance for the specified company.
     This function is currently set to get the most recent date, but is
@@ -32,6 +32,7 @@ def get_yahoos_daily_data(ticker, start_date, end_date):
     :param ticker: Ticker symbol that represents a company
     :param start_date: Collect pricing data starting at this date
     :param end_date: Collection of pricing data ends at this date
+    :param cron_flag: Boolean - True if getting data for one day, false otherwise
     :return: OHLCAV data for the company
     """
     prices = []
@@ -48,8 +49,9 @@ def get_yahoos_daily_data(ticker, start_date, end_date):
 
         # First day is the either the start of the dataset, or the day of the IPO if the company had not gone
         # public yet
-        first_day = yahoo_data[-1].strip().split(',')
-        assign_starting_date(con, ticker, first_day[0])
+        if not cron_flag:
+            first_day = yahoo_data[-1].strip().split(',')
+            assign_starting_date(con, ticker, first_day[0])
 
         for line in yahoo_data:
             p = line.strip().split(',')
@@ -80,6 +82,14 @@ def generate_failure_file():
     f.close()
 
 
+def check_one_day(start, end):
+    """
+    Utility method to check if we are using this as a daily script, or over historical data. If we use
+    it as a daily script, its a datetime object, otherwise we have a tuple
+    """
+    return start == end
+
+
 if __name__ == "__main__":
     start_time = time.time()
     tickers = retrieve_db_tickers(con)
@@ -87,15 +97,18 @@ if __name__ == "__main__":
     """Parameters used to gather price data over a period of time """
     # Format: (YYYY, M, D)
     start_date = (1998, 1, 1)
-    end_date = (2016, 9, 30)
+    end_date = (2016, 10, 14)
 
     """Parameters to use to gather the most recent days price data """
     #start_date = datetime.date.today().timetuple()[0:3]
     #end_date = datetime.date.today().timetuple()[0:3]
 
+    # Used to determine if we need to assign starting date for tickers
+    history_flag = check_one_day(start_date, end_date)
+
     for t in tickers:
         print "Adding data for %s" % t[1]
-        yahoo_data = get_yahoos_daily_data(t[1], start_date, end_date)
+        yahoo_data = get_yahoos_daily_data(t[1], start_date, end_date, history_flag)
 
         # The data retrieval failed for this specific ticker
         if yahoo_data == -1:
