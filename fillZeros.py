@@ -31,16 +31,15 @@ def one_day(start_day):
         return False
 
 
-def get_elapsed_time_window(todays_date):
+def get_elapsed_time_window(target_date):
     """
     We interpolate with a trailing window of 4 days to account for 3 day weekends
-    :param todays_date: Date object indicating today
-    :return: A tuple with two dates (ranging between 4 days ago and today)
+    :param target_date: Date - Target date for processing
+    :return: Date - Elapsed start date
     """
-    start_date = (todays_date - datetime.timedelta(days=4)).strftime("%Y-%m-%d")
-    end_date = datetime.datetime.now().strftime("%Y-%m-%d")
+    elapsed_start = (target_date - datetime.timedelta(days=4)).strftime("%Y-%m-%d")
 
-    return start_date, end_date
+    return elapsed_start
 
 
 def process_data(stock_tickers, start_time, end_time, history_flag):
@@ -72,9 +71,9 @@ def process_data(stock_tickers, start_time, end_time, history_flag):
             # If over historical data, no additional work is needed
             if history_flag:
                 insert_clean_and_interpolated_data_into_db(con, stock_data)
-            # If done via a cron job, need to update the price_date accordingly
+            # If done via a cron job, need to update the target_date only
             else:
-                target_day = (datetime.datetime.now() - datetime.timedelta(days=4)).strftime("%Y-%m-%d")
+                target_day = get_elapsed_time_window(end_time)
                 stock_data = stock_data.loc[stock_data['price_date'] == target_day]
 
                 insert_clean_and_interpolated_data_into_db(con, stock_data)
@@ -84,7 +83,6 @@ def interpolate_data(column, data_with_zeros):
     """
     Takes all zeros from a given feature (Open, High, Low, Close, Adjusted_Close, and interpolates them.
     If the first value is zero, fill it with the next non-zero value.
-
     :param column: A Series object that contains time-series data for a given feature.
     :param data_with_zeros: A Dataframe object holding the data for each column/feature we want to interpolate.
     :return: A new Series object that has been processed.
@@ -102,14 +100,15 @@ def interpolate_data(column, data_with_zeros):
 
 
 if __name__ == "__main__":
+    today = datetime.datetime.now().strftime("%Y-%m-%d")
     start_time = time.time()
     history_flag = False
     tickers = retrieve_db_tickers(con)
 
     """Parameters used to gather price data over a period of time """
     # Format: 'YYYY-MM-DD'
-    #start = '2016-09-28'
-    #end = '2016-09-30'
+    #start = '1998-01-01'
+    #end = '2016-10-13'
 
     """Parameters to use to gather the most recent days price data """
     start = (datetime.datetime.now() - datetime.timedelta(days=4))
@@ -118,7 +117,7 @@ if __name__ == "__main__":
     # Used as Cron script
     if one_day(start):
         if isbday(start, holidays=holidays.US()):
-            elapsed_start, today = get_elapsed_time_window(start)
+            elapsed_start = get_elapsed_time_window(start)
             process_data(tickers, elapsed_start, today, history_flag)
 
     # Used over history
