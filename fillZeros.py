@@ -14,6 +14,7 @@ from SharedFunctionsLib import *
 import holidays
 from bdateutil import isbday
 
+
 timestamp = datetime.datetime.utcnow()
 con = get_db_connection()
 
@@ -68,14 +69,14 @@ def process_data(stock_tickers, start_time, end_time, history_flag):
 
             stock_data['last_updated_date'] = timestamp
 
-            # If over historical data, no additional work is needed
+            # If over historical data, no additional work is needed -- just add to database
             if history_flag:
                 insert_clean_and_interpolated_data_into_db(con, stock_data)
-            # If done via a cron job, need to update the target_date only
-            else:
-                target_day = get_elapsed_time_window(end_time)
-                stock_data = stock_data.loc[stock_data['price_date'] == target_day]
 
+            # If done via a cron job, need to update the target_date, then add to database
+            else:
+                target_day = get_elapsed_time_window(datetime.datetime.now())
+                stock_data = stock_data.loc[stock_data['price_date'] == target_day]
                 insert_clean_and_interpolated_data_into_db(con, stock_data)
 
 
@@ -108,7 +109,7 @@ if __name__ == "__main__":
     """Parameters used to gather price data over a period of time """
     # Format: 'YYYY-MM-DD'
     #start = '1998-01-01'
-    #end = '2016-10-13'
+    #end = '2016-10-14'
 
     """Parameters to use to gather the most recent days price data """
     start = (datetime.datetime.now() - datetime.timedelta(days=4))
