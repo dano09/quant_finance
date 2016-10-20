@@ -141,9 +141,9 @@ def insert_data_into_db(con, data_vendor_id, symbol_id, daily_data):
     Takes the OHLCAV data for a specific company, over pre-defined
     time range and adds it to the Database.
     :param con: Database connection
-    :param data_vendor_id:
-    :param symbol_id:
-    :param daily_data:
+    :param data_vendor_id: Int used to identify the vendor
+    :param symbol_id: Int used to identify the company
+    :param daily_data: List of Tuples containing price data
     """
     timestamp = datetime.datetime.utcnow()
     # Map daily price data to the columns of our database table

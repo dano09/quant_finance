@@ -5,7 +5,7 @@ delete daily_price from daily_price inner join (select min(id) minid, data_vendo
 2. Select duplicate rows (on every column) on daily_price table
 
 select * from daily_price inner join 
-(select min(id) minid, data_vendor_id, symbol_id, price_date, created_date, last_updated_date, open_price, high_price, low_price, close_price, adj_close_price, volume from daily_price group by data_vendor_id, symbol_id, price_date, created_date, last_updated_date, open_price, high_price, low_price, close_price, adj_close_price, volume having count(1) > 1) as duplicates on (duplicates.data_vendor_id = daily_price.data_vendor_id and duplicates.symbol_id = daily_price.symbol_id and duplicates.price_date = daily_price.price_date and duplicates.created_date = daily_price.created_date and duplicates.last_updated_date = daily_price.last_updated_date and duplicates.open_price = daily_price.open_price and duplicates.high_price = daily_price.high_price and duplicates.low_price = daily_price.low_price and duplicates.close_price = daily_price.close_price and duplicates.adj_close_price = daily_price.adj_close_price and duplicates.volume = daily_price.volume and duplicates.minid <> daily_price.id)
+(select min(id) minid, data_vendor_id, symbol_id, price_date, created_date, last_updated_date, open_price, high_price, low_price, close_price, adj_close_price, volume from daily_price group by data_vendor_id, symbol_id, price_date, created_date, last_updated_date, open_price, high_price, low_price, close_price, adj_close_price, volume having count(1) > 1) as duplicates on (duplicates.data_vendor_id = daily_price.data_vendor_id and duplicates.symbol_id = daily_price.symbol_id and duplicates.price_date = daily_price.price_date and duplicates.created_date = daily_price.created_date and duplicates.last_updated_date = daily_price.last_updated_date and duplicates.open_price = daily_price.open_price and duplicates.high_price = daily_price.high_price and duplicates.low_price = daily_price.low_price and duplicates.close_price = daily_price.close_price and duplicates.adj_close_price = daily_price.adj_close_price and duplicates.volume = daily_price.volume and duplicates.minid <> daily_price.id);
 
 
 3. Delete all duplicates that have same price date on daily_price table
@@ -31,7 +31,7 @@ select * from daily_price where id NOT IN (SELECT MIN(id) FROM daily_price)
 
 7. looks at days, and their count of rows (helps to identify duplicates)
 
-select price_date, count(*) from daily_price where data_vendor_id = '2' GROUP BY price_date;
+select price_date, count(*) from daily_price GROUP BY price_date;
 
 8. Look at duplicate rows by vendor
 
@@ -40,6 +40,13 @@ select price_date, count(*) from daily_price where data_vendor_id = '1' GROUP BY
 9. Clear a table
 
 TRUNCATE TABLE clean_prices where data_vendor_id = '2';
+
+10. Delete duplicate symbols
+select * from symbol inner join
+(select min(id) minid, ticker from symbol group by ticker having count(1) > 1) as duplicates on (duplicates.ticker = symbol.ticker and duplicates.minid <> symbol.id);
+
+delete symbol from symbol inner join
+(select min(id) minid, ticker from symbol group by ticker having count(1) > 1) as duplicates on (duplicates.ticker = symbol.ticker and duplicates.minid <> symbol.id);
 
 
 

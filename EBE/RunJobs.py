@@ -20,13 +20,13 @@ def monthly_scripts():
     """
     start_time = time.time()
     print "Get any new tickers for our database"
-    call(['python', 'obtainSymbols.py'])
-    print "\n Finished obtainSymbols script \n"
+    call(['python', 'ObtainSymbols.py'])
+    print "\n Finished ObtainSymbols script \n"
     sleep(5)
 
     print "Now lets remove any delisted tickers"
-    call(['python', 'delistStocks.py'])
-    print "\n Finished delistStocks script \n"
+    call(['python', 'DelistStocks.py'])
+    print "\n Finished DelistStocks script \n"
 
     print("---Monthly maintenance scripts took %s seconds ---" % (time.time() - start_time))
 
@@ -39,22 +39,22 @@ def daily_scripts():
     """
     start_time = time.time()
     print "Collecting Data from Yahoo"
-    call(['python', 'obtainYahooPriceData.py'])
+    call(['python', 'ObtainYahooPriceData.py'])
     print "\n Finished with Yahoo \n"
     sleep(5)
 
     print "\n Collecting Data from Quandl"
-    call(['python', 'obtainQuandlPriceData.py'])
+    call(['python', 'ObtainQuandlPriceData.py'])
     print "\n Finished with Quandl \n"
     sleep(5)
 
     print "\n Now clean data from Yahoo and Quandl \n"
-    call(['python', 'cleanPricingData.py'])
-    print "\n Finished cleaning data \n"
+    call(['python', 'CleanPricingData.py'])
+    print "\n Finished comparing data \n"
     sleep(5)
 
     print "\n Now lets fill any missing data \n"
-    call(['python', 'fillZeros.py'])
+    call(['python', 'FillZeros.py'])
     print "\n Finished cleaning data \n"
 
     print("---Today's work took %s seconds ---" % (time.time() - start_time))
