@@ -81,7 +81,6 @@ class Plotter:
 
         return [cell_colors, row_colors, col_colors]
 
-    @staticmethod
     def create_table(self, data):
         cell_text = self.create_cell_text(data[0], data[1], data[2], data[3])
         row_labels = self.create_row_labels(cell_text)
@@ -92,6 +91,7 @@ class Plotter:
                   rowColours=colors[1], rowLabels=row_labels,
                   colColours=colors[2], colLabels=col_labels,
                   bbox=[0.0, -1.3, 1.0, 1.0], cellLoc='center')
+        #plt.show()
 
     def plot_price_with_signals(self):
         """
@@ -103,6 +103,8 @@ class Plotter:
             price_data = self.get_data(security)
             self.plot_data(ax, security, price_data)
             self.create_table(price_data)
+
+        plt.show()
 
     def plot_price_with_signals_grouped(self):
         """
