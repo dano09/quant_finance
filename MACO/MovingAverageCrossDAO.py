@@ -7,6 +7,7 @@ Author: Justin Dano 11/05/2016
 from DAO import DAO
 import pandas as pd
 import MySQLdb as mdb
+import datetime
 
 
 class MovingAverageCrossDAO(DAO):
@@ -43,6 +44,17 @@ class MovingAverageCrossDAO(DAO):
             data = cur.fetchall()
             return [(d[0], d[1]) for d in data]
 
+    def get_universe(self, start, end):
+        """
+        TODO: Need to determine what companies to get, and how many
+        :return:
+        """
+        with self.con:
+            cur = self.con.cursor()
+            cur.execute("SELECT ticker FROM symbol where first_price_date <= %s", [start])
+            data = cur.fetchall()
+            return [d[0] for d in data]
+
     def read_data(self, ticker, start, end):
         with self.con:
             cur = self.con.cursor()
@@ -68,7 +80,26 @@ class MovingAverageCrossDAO(DAO):
 
             return price_data
 
-    def write_data(self):
-        print "test write"
+
+    def write_data(self, data):
+        """
+        Takes the OHLCAV data for a specific company, over pre-defined
+        time range and adds it to the Database.
+
+        """
+        timestamp = datetime.datetime.utcnow()
+        data.append(timestamp)
+
+        # Build the parametrized query string
+        column_str = """ticker_1, ticker_2, ticker_3, ticker_4, start_date, end_date, short_mavg,
+        long_mavg, start_capital, universe_type, trades, end_capital, created_date"""
+
+        insert_str = ("%s, " * 13)[:-2]
+        query_string = "INSERT INTO maco (%s) VALUES (%s)" % (column_str, insert_str)
+
+        # Connect with MySQL database and perform the insert query
+        with self.con:
+            cur = self.con.cursor()
+            cur.executemany(query_string, [data])
 
 
