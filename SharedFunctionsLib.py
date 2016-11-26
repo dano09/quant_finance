@@ -9,9 +9,9 @@ def get_db_connection():
     :return: MySQL Server database connection
     """
     db_host = 'localhost'
-    db_user = '***'
-    db_pass = '***'
-    db_name = '***'
+    db_user = 'root'
+    db_pass = 'GoldfishSmiles.com'
+    db_name = 'securities_master'
     return mdb.connect(db_host, db_user, db_pass, db_name)
 
 
@@ -24,6 +24,19 @@ def retrieve_db_tickers(connection):
     with connection:
         cur = connection.cursor()
         cur.execute("SELECT id, ticker FROM symbol where status_id = 2")
+        data = cur.fetchall()
+        return [(d[0], d[1]) for d in data]
+
+
+def retrieve_one_ticker(connection):
+    """
+    Retrieve one ticker for testing
+    :param connection: Database connection
+    :return: List of all tickers from database
+    """
+    with connection:
+        cur = connection.cursor()
+        cur.execute("SELECT id, ticker FROM symbol where id = 1")
         data = cur.fetchall()
         return [(d[0], d[1]) for d in data]
 
@@ -215,3 +228,26 @@ def update_symbols(con, ticker, final_day):
         cur = con.cursor()
         cur.execute(date_query, date_data)
         cur.execute(status_query, status_data)
+
+def get_universe_by_market_caps(start, end):
+    """
+    Used to determine market cap of companies over time-series
+    :param start:
+    :param end:
+    :return:
+    """
+    tickers = ma_dao.get_universe(start, end)
+    volume_df = pd.DataFrame(index=tickers)
+    volume_df['volume'] = 0
+
+    for ticker in tickers:
+        bars = ma_dao.read_data(ticker, start, end)
+        universe.append(bars)
+        try:
+            volume = calculate_avg_volume(bars)
+            volume_df.set_value(ticker, 'volume', volume)
+
+        except Exception as e:
+            print "Ticker : " + str(ticker) + " did not have data!"
+            print "E: " + str(e)
+            print(traceback.format_exception(*sys.exc_info()))

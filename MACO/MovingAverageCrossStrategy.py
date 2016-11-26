@@ -32,11 +32,14 @@ class MovingAverageCrossStrategy(Strategy):
 
         # Create the set of short and long simple moving averages over the
         # respective periods
+        print_full(self.bars)
+        print self.short_window
         signals['short_mavg'] = pd.rolling_mean(self.bars['close_price'],
                                                 self.short_window, min_periods=1)
 
         signals['long_mavg'] = pd.rolling_mean(self.bars['close_price'],
                                                self.long_window, min_periods=1)
+
 
         # Create a 'signal' (invested or not invested) when the short moving average crosses the long
         # moving average, but only for the period greater than the shortest moving average window
@@ -47,3 +50,9 @@ class MovingAverageCrossStrategy(Strategy):
         # Take the difference of the signals in order to generate actual trading orders
         signals['positions'] = signals['signal'].diff()
         return signals
+
+
+def print_full(x):
+    pd.set_option('display.max_rows', len(x))
+    print(x)
+    pd.reset_option('display.max_rows')

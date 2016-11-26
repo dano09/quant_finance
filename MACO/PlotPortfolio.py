@@ -8,6 +8,7 @@ from Plotter import Plotter
 from Table import Table
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 from datetime import datetime
 
 class PlotPortfolio(Plotter, Table):
@@ -136,6 +137,11 @@ class PlotPortfolio(Plotter, Table):
 
         plt.legend(numpoints=1)
 
+    def print_full(x):
+        pd.set_option('display.max_rows', len(x))
+        print(x)
+        pd.reset_option('display.max_rows')
+
     @staticmethod
     def create_cell_text(self, events, event_dates, b_dates=None, s_dates=None):
 
@@ -147,6 +153,12 @@ class PlotPortfolio(Plotter, Table):
             for e in event_list:
                 row = [d.strftime("%Y-%m-%d")]
                 row.append(e)
+                #print "self.returns"
+                #print self.returns
+                #print "self.returns.ix[d]"
+                #print self.returns.ix[d]
+                #self.print_full(self.returns)
+                #self.print_full(self.returns.ix[d])
                 row.extend("{0:.2f}".format(val) for val in self.returns.ix[d].values[:-1])
                 table.append(row)
 
@@ -211,7 +223,6 @@ class PlotPortfolio(Plotter, Table):
         :return:
         """
         # Plot the equity curve in dollars
-
         events, event_dates, trade_count = self.generate_events(self, start_date, end_date)
         ax = self.setup_figure(self, trade_count)
         data = self.get_data(self)
