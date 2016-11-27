@@ -30,7 +30,7 @@ class Table(object):
         raise NotImplementedError("Must implement create_table_colors()!")
 
     @abstractmethod
-    def create_table(self, data, event, event_dates):
+    def create_table(self, data):
         """"""
         raise NotImplementedError("Must implement create_table()!")
 

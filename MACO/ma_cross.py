@@ -4,6 +4,7 @@
 Author: Justin Dano 11/05/2016
 
 """
+from EventGenerator import EventGenerator
 from MarketOnClosePortfolio import MarketOnClosePortfolio
 from MarketOnCloseSecurity import MarketOnCloseSecurity
 from MovingAverageCrossDAO import MovingAverageCrossDAO
@@ -89,7 +90,7 @@ def get_universe_by_market_caps(start, end, calculate_flag):
 
         ma_dao.save_universe_by_volume(clean_df)
 
-    universe_by_volume = ma_dao.get_universe_by_volume()
+    universe_by_volume = ma_dao.read_universe_by_volume()
 
     df_length = universe_by_volume.shape
     total = df_length[0]
@@ -102,28 +103,33 @@ def get_universe_by_market_caps(start, end, calculate_flag):
 
 
 def perform_maco(universe, dates, mavg_windows, capital):
-    # Run strategy on universe of securities
     try:
+        # Run strategy on universe of securities
         list_of_securities = run_strategy(dates[0], dates[1], universe, mavg_windows[0], mavg_windows[1])
-        # Generate portfolio
-        portfolio = MarketOnClosePortfolio(list_of_securities, initial_capital=capital)
+
+        # Generate portfolio of signals from the MACO strategy
+        signal_portfolio = MarketOnClosePortfolio(list_of_securities, initial_capital=capital)
 
         # Run backtest on portfolio
-        backtested_portfolio = portfolio.backtest_portfolio()
+        backtest_portfolio = signal_portfolio.backtest_portfolio()
+
+        # Get number of trades for meta_data
+        event_gen = EventGenerator(signal_portfolio, backtest_portfolio)
+        trade_count = event_gen.get_trade_count()
 
         # Plot Strategies
         for security in list_of_securities:
             plot_strat = PlotStrategy(security)
-            #plot_strat.plot_price_with_signals()
+            plot_strat.plot_price_with_signals()
         # Plot portfolio
-        plot_portfolio = PlotPortfolio(portfolio, backtested_portfolio)
-        trades = plot_portfolio.plot_equity_curve(start, end)
+        #plot_portfolio = PlotPortfolio(portfolio, backtest_results)
+        #trades = plot_portfolio.plot_equity_curve(start, end)
 
     except ValueError as e:
         print "Error: " + str(e)
         raise
 
-    return backtested_portfolio, trades
+    return signal_portfolio, backtest_portfolio, trade_count
 
 def generate_parameters(stock_universe):
     #TODO: Determine # of shares to buy/sell in here
@@ -153,7 +159,7 @@ def run_maco(maco_params):
         capital = maco_params[4]
         universe_type = maco_params[5]
 
-        # Store meta data about the strategy ran in the database for reference
+        # Collect metadata on the strategy implemented
         meta_data = [tickers[0], tickers[1], tickers[2], tickers[3],
                      dates[0], dates[1],
                      lookback_windows[0], lookback_windows[1],
@@ -161,11 +167,21 @@ def run_maco(maco_params):
                      universe_type]
 
         try:
-            portfolio, num_of_trades = perform_maco(tickers, dates, lookback_windows, capital)
-            backtest_results = [num_of_trades, portfolio['total'][-1]]
+            # Market on Close Portfolio (MOCP)
+            mocp, backtest_portfolio, num_of_trades = perform_maco(tickers, dates, lookback_windows, capital)
+            backtest_results = [num_of_trades, backtest_portfolio['total'][-1]]
             meta_data.extend(backtest_results)
+
+            # Save meta data and parameters of MACO strategy
             row_id = ma_dao.write_data(meta_data)
-            ma_dao.save_backtest(portfolio, row_id)
+
+            # Save signals generated for each security
+            for ticker_id, security in enumerate(mocp.market_on_close_securities):
+                ma_dao.save_signals(security.signals, security.symbol, row_id)
+
+            # Save backtest results
+            ma_dao.save_maco_backtest(backtest_portfolio, row_id)
+
         except Exception as e:
             print "Could not complete MACO for start date: " + str(dates[0]) + " and end date: " + str(dates[1]) + \
                   " with lookback periods of: " + str(lookback_windows[0]) + " and: " + str(lookback_windows[1]) + \
@@ -173,30 +189,6 @@ def run_maco(maco_params):
 
             print "E: " + str(e)
             print(traceback.format_exception(*sys.exc_info()))
-
-
-def compute_results(dao):
-    s_cap = ma_dao.read_maco_results('small_cap')
-    print s_cap
-    plot_results = PlotResults(s_cap)
-    plot_results.plot_graph()
-    # plot_strat.plot_price_with_signals()
-    s_end_capital = s_cap['end_capital']
-    s_avg_total = s_end_capital.cumsum().max()
-    num_of_runs = s_cap.shape
-    s_avg_capital = s_avg_total / num_of_runs[0]
-
-
-    l_cap = ma_dao.read_maco_results('large_cap')
-
-    l_end_capital = l_cap['end_capital']
-    l_avg_total = l_end_capital.cumsum().max()
-    num_of_runs = l_cap.shape
-    l_avg_capital = l_avg_total / num_of_runs[0]
-
-    print "Short cap average: " + str(s_avg_capital)
-    print "Large cap average: " + str(l_avg_capital)
-    print "here"
 
 
 def validate_dates(start_date, end_date):
@@ -221,7 +213,7 @@ if __name__ == "__main__":
     universe = []
     ma_dao = MovingAverageCrossDAO("localhost", "root", "GoldfishSmiles.com", "securities_master")
     start = '1998-01-02'
-    end = '2004-10-15'
+    end = '2016-10-14'
 
     valid_test_flag = validate_dates(start, end)
     assert (valid_test_flag is True), "Must have valid price dates!"
@@ -245,18 +237,10 @@ if __name__ == "__main__":
     # Test Small Caps
     run_maco(small_cap_params)
 
-        # Test Large Caps
-    #large_cap_params = generate_parameters(universe[1])
-    #run_maco(large_cap_params, 'large_cap')
+    # Test Large Caps
+    run_maco(large_cap_params)
 
 
-
-    compute_results(ma_dao)
-
-print("---Moving Average Cross over took ---" % (time.time() - start_time))
+    print("Time to complete:         %s seconds" % round((time.time() - start_time), 4))
 
 
-def print_full(x):
-    pd.set_option('display.max_rows', len(x))
-    print(x)
-    pd.reset_option('display.max_rows')

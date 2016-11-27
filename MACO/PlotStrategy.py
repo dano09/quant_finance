@@ -33,17 +33,19 @@ class PlotStrategy(Plotter, Table):
         return [buy_dates, mavg_buy_signal, sell_dates, mavg_sell_signal]
 
     @staticmethod
-    def setup_figure(self, count=None):
+    def setup_figure(self, count):
         """
         Creates and formats time-series graph
         :return: The figure
         """
-        fig = plt.figure()
+        size = (count / 4) + 5
+
+        fig = plt.figure(figsize=(10, size))
         fig.patch.set_facecolor('silver')
         fig.suptitle('Moving Average Crossover for ' + self.security.symbol, fontsize=14, fontweight='bold')
         ax = fig.add_subplot(211)
         ax.set_axis_bgcolor('beige')
-        ax.set_xlabel('Time')
+        ax.set_xlabel('Time Horizon of Backtest')
         ax.set_ylabel('Price in $ (USD)')
         return ax
 
@@ -59,11 +61,11 @@ class PlotStrategy(Plotter, Table):
         ax.plot(self.security.bars['close_price'].astype(float), color='navy', lw=2.5)
         ax.plot(self.security.signals['short_mavg'], 'dodgerblue', lw=2.)
         ax.plot(self.security.signals['long_mavg'], 'sandybrown', lw=2.)
-        ax.legend(['Closing Price', 'Short MAVG', 'Long MVAG'])
+        ax.legend(['Closing Price', 'Short MAVG', 'Long MVAG'], prop={'size': 7})
         # Plot Buy Signals
-        ax.plot(data[0], data[1], '^', markersize=15, color='lightgreen')
+        ax.plot(data[0], data[1], '^', markersize=10, color='lightgreen')
         # Plot Sell Signals
-        ax.plot(data[2], data[3], 'v', markersize=15, color='lightcoral')
+        ax.plot(data[2], data[3], 'v', markersize=10, color='lightcoral')
 
     @staticmethod
     def create_cell_text(self, b_dates, s_dates, events=None, event_dates=None):
@@ -120,12 +122,17 @@ class PlotStrategy(Plotter, Table):
                   colColours=colors[2], colLabels=col_labels,
                   bbox=[0.0, -1.3, 1.0, 1.0], cellLoc='center')
 
+    def get_total_events(self):
+        return len(self.data[0]) + len(self.data[0])
+
+
     def plot_price_with_signals(self):
         """
         Plots each security on a separate figure
         :return:
         """
-        ax = self.setup_figure(self)
+        events = self.get_total_events()
+        ax = self.setup_figure(self, events)
         data = self.get_data(self)
         self.plot_data(self, ax, data)
         self.create_table(self, data)

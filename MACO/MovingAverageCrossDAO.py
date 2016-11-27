@@ -47,6 +47,13 @@ class MovingAverageCrossDAO(DAO):
             data = cur.fetchall()
             return [(d[0], d[1]) for d in data]
 
+    def validate_date(self, date):
+        with self.con:
+            cur = self.con.cursor()
+            cur.execute("SELECT * FROM cleaned_price where price_date = %s", [date])
+            data = cur.fetchall()
+            return data
+
     def get_universe(self, start, end):
         """
         TODO: Need to determine what companies to get, and how many
@@ -62,18 +69,8 @@ class MovingAverageCrossDAO(DAO):
         with self.con:
             universe_by_volume.to_sql(con=self.con, name='universe_by_volume', if_exists='append', index=False, flavor='mysql')
 
-    def get_universe_by_volume(self):
-        """
-        TODO: Need to determine what companies to get, and how many
-        :return:
-        """
-
+    def read_universe_by_volume(self):
         return pd.read_sql("SELECT * from universe_by_volume", con=self.con)
-        #with self.con:
-        #    cur = self.con.cursor()
-        #    cur.execute("SELECT * from universe_by_volume")
-        #    data = cur.fetchall()
-        #    return [(d[0], d[1]) for d in data]
 
     def read_data(self, ticker, start, end):
         with self.con:
@@ -100,7 +97,31 @@ class MovingAverageCrossDAO(DAO):
 
             return price_data
 
-    def read_maco_results(self, universe):
+    def write_data(self, data):
+        meta_id = self.save_maco_meta(data)
+        return meta_id
+
+    def save_maco_meta(self, data):
+        timestamp = datetime.datetime.now()
+        data.append(timestamp)
+        # Build the parametrized query string
+        column_str = """ticker_1, ticker_2, ticker_3, ticker_4, start_date, end_date, short_mavg,
+        long_mavg, start_capital, universe_type, trades, end_capital, created_date"""
+
+        insert_str = ("%s, " * 13)[:-2]
+        query_string = "INSERT INTO maco (%s) VALUES (%s)" % (column_str, insert_str)
+
+        # Connect with MySQL database and perform the insert query
+        with self.con:
+            cur = self.con.cursor()
+            cur.executemany(query_string, [data])
+            return cur.lastrowid
+
+        #TODO: use to_SQL
+        #with self.con:
+        #    data.to_sql(con=self.con, name='maco', if_exists='append', index=False, flavor='mysql')
+
+    def read_maco_meta(self, universe):
         try:
             sql = "SELECT * FROM maco WHERE universe_type = %(universe_type)s"
             columns = ['id', 'ticker_1', 'ticker_2', 'ticker_3', 'ticker_4',
@@ -117,65 +138,53 @@ class MovingAverageCrossDAO(DAO):
 
         return results
 
-    def write_data(self, data):
-        meta_id = self.save_meta_data(data)
-        return meta_id
+    def save_signals(self, signals, ticker, maco_id):
+        timestamp = datetime.date.today()
+        signals['maco_id'] = maco_id
+        signals['ticker'] = ticker
+        signals['created_date'] = timestamp
+        signals['price_date'] = signals.index
 
-    def save_meta_data(self, data):
-        timestamp = datetime.datetime.utcnow()
-        data.append(timestamp)
-
-        # Build the parametrized query string
-        column_str = """ticker_1, ticker_2, ticker_3, ticker_4, start_date, end_date, short_mavg,
-        long_mavg, start_capital, universe_type, trades, end_capital, created_date"""
-
-        insert_str = ("%s, " * 13)[:-2]
-        query_string = "INSERT INTO maco (%s) VALUES (%s)" % (column_str, insert_str)
-
-        # Connect with MySQL database and perform the insert query
+        # Remove any data rows that include nan
+        signals = signals.dropna()
         with self.con:
-            cur = self.con.cursor()
-            cur.executemany(query_string, [data])
-            return cur.lastrowid
+            signals.to_sql(con=self.con, name='maco_signals', if_exists='append', index=False, flavor='mysql')
 
+    def read_maco_signals(self, maco_id, ticker_name):
+        try:
+            sql = "SELECT * FROM maco_signals WHERE maco_id = %(maco_id)s and ticker = %(ticker)s"
+            results = pd.read_sql(sql, self.con, params={"maco_id": maco_id, "ticker": ticker_name})
 
-        #with self.con:
-        #    data.to_sql(con=self.con, name='maco', if_exists='append', index=False, flavor='mysql')
+        except Exception as e:
+            print "Could not download data for maco_id = " + str(maco_id) + " and ticker name = " + str(ticker_name)
+            print(traceback.format_exception(*sys.exc_info()))
 
+        return results
 
-    def save_backtest(self, data, id):
-        """
-
-        :param data:
-        :return:
-        """
-        timestamp = datetime.datetime.utcnow()
-        #data.append(timestamp)
-        data['maco_id'] = id
+    def save_maco_backtest(self, data, maco_id):
+        timestamp = datetime.datetime.now()
+        data['maco_id'] = maco_id
         data['created_date'] = timestamp
         data['price_date'] = data.index
-        print data
-        print data.columns
-        print data.columns[0]
+
+        # Database columns are not ticker specific
         data = data.rename(index=str, columns={data.columns[0]: "ticker_1", data.columns[1]: "ticker_2", data.columns[2]: "ticker_3", data.columns[3]: "ticker_4"})
-        print data
-        newdata = data.dropna()
-        print "\ndata after: \n"
-        print newdata
-
-        """
-        Insert cross-referenced dataframe into the database. Used by the cleanPricingData script
-        :param con: Database connection
-        :param price_data: Dataframe - OHLCAV data after being cross-validated between the two vendors
-        """
+        # Remove any data rows that include nan
+        clean_data = data.dropna()
         with self.con:
-            newdata.to_sql(con=self.con, name='maco_backtest', if_exists='append', index=False, flavor='mysql')
+            clean_data.to_sql(con=self.con, name='maco_backtest', if_exists='append', index=False, flavor='mysql')
 
-    def validate_date(self, date):
-        with self.con:
-            cur = self.con.cursor()
-            cur.execute("SELECT * FROM cleaned_price where price_date = %s", [date])
-            data = cur.fetchall()
-            return data
+    def read_maco_backtest(self, maco_id):
+        try:
+            sql = "SELECT * FROM maco_backtest WHERE maco_id = %(maco_id)s "
+            results = pd.read_sql(sql, self.con, params={"maco_id": maco_id})
+
+        except Exception as e:
+            print "Could not retrieve maco_backtest for maco_id = " + str(maco_id)
+            print(traceback.format_exception(*sys.exc_info()))
+
+        return results
+
+
 
 

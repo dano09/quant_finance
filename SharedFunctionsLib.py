@@ -158,7 +158,7 @@ def insert_data_into_db(con, data_vendor_id, symbol_id, daily_data):
     :param symbol_id: Int used to identify the company
     :param daily_data: List of Tuples containing price data
     """
-    timestamp = datetime.datetime.utcnow()
+    timestamp = datetime.datetime.now()
     # Map daily price data to the columns of our database table
     daily_data = [[data_vendor_id, symbol_id, d[0], timestamp, timestamp,
     d[1], d[2], d[3], d[4], d[5], d[6]] for d in daily_data]

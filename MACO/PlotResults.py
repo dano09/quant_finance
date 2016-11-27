@@ -11,12 +11,16 @@ import numpy as np
 import pandas as pd
 from datetime import datetime
 import datetime
+from dateutil.relativedelta import relativedelta
 import matplotlib.dates as md
 
-class PlotResults(Plotter):
 
-    def __init__(self, results):
-        self.results = results
+class PlotResults(Plotter, Table):
+    def __init__(self, small_backtest, large_backtest, trades):
+        self.s_backtest = small_backtest
+        self.l_backtest = large_backtest
+        self.s_trades = trades[0]
+        self.l_trades = trades[1]
 
     @staticmethod
     def setup_figure(self):
@@ -25,11 +29,11 @@ class PlotResults(Plotter):
         :param number_of_events: Int - Used for determining height of the figure
         :return: The figure
         """
-        # Figure starts at a height of 4 inches and increments an inch every 4 events
-        #size = (event_count / 4) + 4
-        fig = plt.figure(figsize=(15, 5))
+        fig = plt.figure(figsize=(12, 5))
         fig.patch.set_facecolor('silver')
-        fig.suptitle('Portfolio snapshots', fontsize=14, fontweight='bold')
+        fig.suptitle(
+            'Large vs Small Volume Portfolio Returns using the Moving Average CrossOver Strategy',
+            fontsize=14, fontweight='bold')
         ax = fig.add_subplot(211)
         ax.set_axis_bgcolor('beige')
         ax.set_xlabel('Time')
@@ -38,71 +42,84 @@ class PlotResults(Plotter):
 
     @staticmethod
     def get_data(self):
-        portfolio_data = []
-
-        #(Start, price) #(End, price)
-        print "self.results"
-        print self.results
-        points = []
-        for index, row in self.results.iterrows():
-            start_point = row['start_date'], row['start_capital']
-            end_point = row['end_date'], row['end_capital']
-            points.append([start_point, end_point])
-
-        return points
+        return self.s_backtest['total'], self.l_backtest['total']
 
     @staticmethod
     def plot_data(self, ax, data):
-        #colors = plt.cm.plasma(np.linspace(0, 1, len(self.securities)))
-
-        for p in data:
-            print "p is: "
-            print p[0][0]
-            print p[0][1]
-
-            fig = plt.figure()
-            ax = fig.add_subplot(111)
-            t0 = datetime.datetime(1998, 1, 2)
-            t = [t0 + datetime.timedelta(days=j) for j in xrange(6570)]
-            y = [1000000] * 6570
-            ax.plot(t, y)
+        ax.plot(data[0], 'navy', lw=2.5)
+        ax.plot(data[1], 'c', lw=2.5)
+        ax.legend(['Small Volume Portfolio', 'Large Volume Portfolio'], loc=2, prop={'size': 7})
 
 
-            #ax.plot(data[i][0], data[i][1], '^', markersize=10, color=colors[i], label=str(security.symbol))
-            x1 = md.date2num(p[0][0])
-            x2 = md.date2num(p[1][0]) - x1
+    def calculate_annualized_return(self, starting_cap, ending_cap, years):
+        return (((ending_cap - starting_cap) / starting_cap) / years) * 100
 
-            #x0 = md.date2num(datetime.datetime(2015, 4, 5))
+    def create_row(self, backtest, trades):
+        row = []
+        starting_cap = backtest.iloc[0]['total']
+        ending_cap = backtest.iloc[-1]['total']
 
-            #xw = md.date2num(datetime.datetime(2015, 4, 7)) - x0
-            #ax.arrow(x1, p[0][1], x2, p[1][1], head_width=0.05, head_length=0.1, fc='k', ec='k')
-            arr = plt.Arrow(x1, p[0][1], x2, p[1][1], edgecolor='black')
-            ax.add_patch(arr)
-            arr.set_facecolor('b')
-            fig.autofmt_xdate()
-            plt.show()
+        start_date = backtest.iloc[0]['price_date']
+        end_date = backtest.iloc[-1]['price_date']
 
-        plt.legend(numpoints=1)
+        difference_in_years = relativedelta(end_date, start_date).years
+        annualized_return = self.calculate_annualized_return(starting_cap, ending_cap, difference_in_years)
+
+        row.append("$ " + str(starting_cap))
+        row.append(trades)
+        row.append("$ " + str(ending_cap))
+        row.append("%.3f" % annualized_return + "%")
+        return row
+
+    def create_cell_text(self, events=None, event_dates=None, b_dates=None, s_dates=None):
+        small_vol_row = self.create_row(self.s_backtest, self.s_trades)
+        large_vol_row = self.create_row(self.l_backtest, self.l_trades)
+        return small_vol_row, large_vol_row
+
+    def create_row_labels(self):
+        row1 = 'Low-Vol Portfolio'
+        row2 = 'High-Vol Portfolio'
+        return row1, row2
+
+    def create_table_colors(self, row_labels, column_labels, cell_text):
+        cell_colors = []
+        cell_color = ['lightgreen'] * len(column_labels)
+        cell_color2 = ['lightcoral'] * len(column_labels)
+        col_colors = ['beige'] * len(column_labels)
+        row_colors = ['beige'] * len(row_labels)
+
+        # Two rows for this table
+        cell_colors.append(cell_color)
+        cell_colors.append(cell_color2)
+
+        return [cell_colors, row_colors, col_colors]
+
+    @staticmethod
+    def create_table(self, data=None):
+
+        cell_text = self.create_cell_text(self)
+
+        row_labels = self.create_row_labels()
+
+        column_labels = ['Starting Capital', 'Number of Trades', 'Ending Capital', 'Annualized Return']
+
+        colors = self.create_table_colors(row_labels, column_labels, cell_text)
+
+        table = plt.table(cellText=cell_text, cellColours=colors[0],
+                          rowColours=colors[1], rowLabels=row_labels,
+                          colColours=colors[2], colLabels=column_labels,
+                          bbox=[0.0, -1.35, 1.0, 1.0],
+                          cellLoc='center')
 
 
-    def plot_graph(self):
-        """
-        Plot the equity curve of the portfolio
-        #TODO: Currently only handles signals for one ticker - need to modify to handle more
-        :return:
-        """
+        table.set_fontsize(8)
+        return table
 
-        ax = self.setup_figure(self,)
-        data = self.get_data(self)
-        self.plot_data(self, ax, data)
+    def plot_results(self):
+        ax = self.setup_figure(self)
+        portfolio_returns = self.get_data(self)
+        self.plot_data(self, ax, portfolio_returns)
 
-        #self.create_table(self, events, event_dates)
-
-        return trade_count
-
-        #fig.show()
-
-
-
+        self.create_table(self)
 
 
