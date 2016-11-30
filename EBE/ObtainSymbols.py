@@ -6,11 +6,12 @@ Author: Justin Dano 8/6/2016
 This script scrapes S&P500 tickers from wikipedia and saves it to the database. The script was inspired by
 Michael Halls-Moore articles on Quantstart.com
 """
-import datetime
-import lxml.html
-from urllib2 import urlopen
 from math import ceil
-from SharedFunctionsLib import *
+from urllib2 import urlopen
+
+import lxml.html
+
+from EBE.ebe_dao import *
 
 con = get_db_connection()
 

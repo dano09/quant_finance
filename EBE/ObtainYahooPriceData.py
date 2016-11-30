@@ -8,11 +8,12 @@ henceforth referred to as OHLCAV data, for every company in the S&P500 and saves
 The script was inspired by Michael Halls-Moore articles on Quantstart.com
 """
 
-import urllib2
 import httplib
 import os.path
 import time
-from SharedFunctionsLib import *
+import urllib2
+
+from EBE.ebe_dao import *
 
 # Using http 1.0 instead the default http/1.1 since http 1.1
 # can handle the chunks, but web-servers cannot when scraping

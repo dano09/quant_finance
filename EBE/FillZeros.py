@@ -7,13 +7,14 @@ Interpolate any zero or nan values that were created from inconsistent pricing d
 two vendors Yahoo Finance and Quandl. Can be used on historical data, or setup to be ran everyday.
 If ran everyday, it interpolates the value four days prior to today's date.
 """
-import time
-import numpy as np
 import math
-from SharedFunctionsLib import *
+import time
+
 import holidays
+import numpy as np
 from bdateutil import isbday
 
+from EBE.ebe_dao import *
 
 timestamp = datetime.datetime.utcnow()
 con = get_db_connection()

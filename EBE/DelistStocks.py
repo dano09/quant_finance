@@ -16,9 +16,7 @@ and if it does not match the day this script is ran, we know it has been deliste
 case this script happens to run on a 3 day weekend.
 """
 
-import datetime
-
-from SharedFunctionsLib import *
+from EBE.ebe_dao import *
 
 timestamp = datetime.datetime.utcnow()
 

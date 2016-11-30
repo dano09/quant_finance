@@ -6,11 +6,13 @@ Author: Justin Dano 8/10/2016
 This script collects price data (Open, High, Low, Close, Adjusted Close, and Volume) henceforth referred to as
 OHLCAV data, from QUANDL using their API, and saves it to the database. It does this for each company in the S&P500.
 """
-import time
-import quandl
-import os.path
 import math
-from SharedFunctionsLib import *
+import os.path
+import time
+
+import quandl
+
+from EBE.ebe_dao import *
 
 quandl.ApiConfig.api_key = 'zmdzi5zBSfY6PsjDvvtV'
 failed_data_symbols = []

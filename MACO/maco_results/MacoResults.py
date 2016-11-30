@@ -1,10 +1,12 @@
-from MovingAverageCrossDAO import MovingAverageCrossDAO
-from PlotStrategy import PlotStrategy
 from MarketOnCloseSecurity import MarketOnCloseSecurity
-from MarketOnClosePortfolio import MarketOnClosePortfolio
-from PlotPortfolio import PlotPortfolio
-from PlotResults import PlotResults
-from EventGenerator import EventGenerator
+
+from MACO.dao.MovingAverageCrossDAO import MovingAverageCrossDAO
+from MACO.maco_display.PlotPortfolio import PlotPortfolio
+from MACO.maco_display.PlotResults import PlotResults
+from MACO.maco_display.PlotStrategy import PlotStrategy
+from MACO.maco_model.EventGenerator import EventGenerator
+from MACO.maco_model.MarketOnClosePortfolio import MarketOnClosePortfolio
+
 
 def generate_mocs(tickers, maco_id, start, end):
     """Generates MarketOnCloseSecurity objects"""

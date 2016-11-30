@@ -4,27 +4,31 @@
 Author: Justin Dano 11/05/2016
 
 """
-from EventGenerator import EventGenerator
-from MarketOnClosePortfolio import MarketOnClosePortfolio
-from MarketOnCloseSecurity import MarketOnCloseSecurity
-from MovingAverageCrossDAO import MovingAverageCrossDAO
-from MovingAverageCrossStrategy import MovingAverageCrossStrategy
-from PlotResults import PlotResults
-from PlotStrategy import PlotStrategy
-from PlotPortfolio import PlotPortfolio
-import traceback
-import pandas as pd
 import sys
-import random
 import time
+import traceback
 
-def print_full(x):
-    pd.set_option('display.max_rows', len(x))
-    print(x)
-    pd.reset_option('display.max_rows')
+import pandas as pd
+
+from MACO.dao.MovingAverageCrossDAO import MovingAverageCrossDAO
+from MACO.maco_display.PlotStrategy import PlotStrategy
+from MACO.maco_model.EventGenerator import EventGenerator
+from MACO.maco_model.MarketOnClosePortfolio import MarketOnClosePortfolio
+from MACO.maco_model.MarketOnCloseSecurity import MarketOnCloseSecurity
+from MACO.maco_model.MovingAverageCrossStrategy import MovingAverageCrossStrategy
 
 
 def run_strategy(start_date, end_date, universe, s_mavg, l_mavg):
+    """
+
+    :param start_date:
+    :param end_date:
+    :param universe:
+    :param s_mavg:
+    :param l_mavg:
+    :return:
+    """
+
     list_of_securities = []
     for ticker in universe:
         print "\nProcessing ticker: " + str(ticker)

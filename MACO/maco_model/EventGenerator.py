@@ -1,7 +1,6 @@
 from datetime import datetime
-import pandas as pd
 
-from PlotPortfolio import PlotPortfolio
+import pandas as pd
 
 
 class EventGenerator:

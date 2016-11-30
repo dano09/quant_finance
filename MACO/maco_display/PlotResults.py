@@ -4,15 +4,11 @@
 Author: Justin Dano 11/05/2016
 
 """
-from Plotter import Plotter
-from Table import Table
 import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
-from datetime import datetime
-import datetime
 from dateutil.relativedelta import relativedelta
-import matplotlib.dates as md
+
+from MACO.maco_display.Plotter import Plotter
+from MACO.maco_display.Table import Table
 
 
 class PlotResults(Plotter, Table):

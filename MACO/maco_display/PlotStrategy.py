@@ -4,9 +4,10 @@
 Author: Justin Dano 11/05/2016
 
 """
-from Plotter import Plotter
-from Table import Table
 import matplotlib.pyplot as plt
+
+from MACO.maco_display.Plotter import Plotter
+from MACO.maco_display.Table import Table
 
 
 class PlotStrategy(Plotter, Table):
