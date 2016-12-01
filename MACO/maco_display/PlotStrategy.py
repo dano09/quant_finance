@@ -21,25 +21,32 @@ class PlotStrategy(Plotter, Table):
         """
         Determine the x and y coordinates for signals to buy or sell stock.
         The x-axis are Dates, and Y-axis is the value of the moving averages
-        :return: List of lists
+        :return [List, List, List, List]
         """
         security = self.security
 
+        # Determine the dates for each signal generated from MACO strategy
         buy_dates = self.security.signals.ix[self.security.signals.positions == 1.0].index
-        mavg_buy_signal = security.signals.short_mavg[security.signals.positions == 1.0]
-
         sell_dates = security.signals.ix[security.signals.positions == -1.0].index
+
+        # Determine the price of the stock on the days the MACO strategy identified
+        # a trade signal
+        mavg_buy_signal = security.signals.short_mavg[security.signals.positions == 1.0]
         mavg_sell_signal = security.signals.short_mavg[security.signals.positions == -1.0]
 
         return [buy_dates, mavg_buy_signal, sell_dates, mavg_sell_signal]
 
     @staticmethod
-    def setup_figure(self, count):
+    def setup_figure(self, signal_count):
         """
-        Creates and formats time-series graph
+        Creates and formats figure that contains a time-series graph and table
         :return: The figure
         """
-        size = (count / 4) + 5
+
+        # Dynamically adjust height of figure based on number of signals. This is to accommodate for
+        # the different number of signals that populate the table for different figures.
+        # Used for styling purposes
+        size = (signal_count / 4) + 5
 
         fig = plt.figure(figsize=(10, size))
         fig.patch.set_facecolor('silver')
@@ -50,19 +57,20 @@ class PlotStrategy(Plotter, Table):
         ax.set_ylabel('Price in $ (USD)')
         return ax
 
-
     @staticmethod
     def plot_data(self, ax, data):
         """
         Plot closing price, moving averages, and signals
         :param self: MarketOnCloseSecurity
         :param ax: Figure
-        :param data: List of (Date,Price) Coordinates
+        :param data: List of (Date,Price) coordinates
         """
+        # Plot price and Moving Averages
         ax.plot(self.security.bars['close_price'].astype(float), color='navy', lw=2.5)
         ax.plot(self.security.signals['short_mavg'], 'dodgerblue', lw=2.)
         ax.plot(self.security.signals['long_mavg'], 'sandybrown', lw=2.)
         ax.legend(['Closing Price', 'Short MAVG', 'Long MVAG'], prop={'size': 7})
+
         # Plot Buy Signals
         ax.plot(data[0], data[1], '^', markersize=10, color='lightgreen')
         # Plot Sell Signals
@@ -71,7 +79,10 @@ class PlotStrategy(Plotter, Table):
     @staticmethod
     def create_cell_text(self, b_dates, s_dates, events=None, event_dates=None):
         """
-        Generate Cell data for table
+        Generates the data to be put in each cell of the table
+        :param b_dates: [Datetime] - Dates of buy signals
+        :param s_dates: [Datetime] - Dates of sell signals
+        :return: All the rows for the table sorted by date of event
         """
         prices = self.security.bars
         table = []
@@ -85,7 +96,6 @@ class PlotStrategy(Plotter, Table):
             table_entry = [v.strftime("%Y-%m-%d"), "Sell", "%.4f" % prices.at[v, 'close_price']]
             table.append(table_entry)
 
-        # Return rows sorted by date
         return sorted(table)
 
     @staticmethod
@@ -126,11 +136,12 @@ class PlotStrategy(Plotter, Table):
     def get_total_events(self):
         return len(self.data[0]) + len(self.data[0])
 
-
     def plot_price_with_signals(self):
         """
-        Plots each security on a separate figure
-        :return:
+        Displays the signals generated from the Moving Average Crossover Strategy.
+        The first figure is a time series, containing signal positions with the closing price
+        and moving average curves. While the second figure is the table detailing the specific
+        price that stock was bought or sold based on a signal
         """
         events = self.get_total_events()
         ax = self.setup_figure(self, events)
