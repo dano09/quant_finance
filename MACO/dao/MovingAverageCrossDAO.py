@@ -7,20 +7,14 @@ Author: Justin Dano 11/05/2016
 import datetime
 import sys
 import traceback
-
 import MySQLdb as mdb
 import pandas as pd
-
 from MACO.dao.DAO import DAO
 
 
 class MovingAverageCrossDAO(DAO):
     """
-    Requires:
-    host
-    user
-    password
-    name
+    DAO specific to reading and writing to database for the Moving Average Crossover
     """
 
     def __init__(self, host, user, password, name):
@@ -39,26 +33,28 @@ class MovingAverageCrossDAO(DAO):
 
     def read_tickers(self):
         """
-        TODO: Need to determine what companies to get, and how many
-        :return:
+        Collects tickers for every company in database
         """
         with self.con:
             cur = self.con.cursor()
-            cur.execute("SELECT id, ticker FROM symbol where id = 2 or id = 5 or id = 7")
+            cur.execute("SELECT id, ticker FROM symbol")
             data = cur.fetchall()
             return [(d[0], d[1]) for d in data]
 
     def validate_date(self, date):
+        """
+        Verifies  and returns price data for a given date
+        """
         with self.con:
             cur = self.con.cursor()
             cur.execute("SELECT * FROM cleaned_price where price_date = %s", [date])
             data = cur.fetchall()
             return data
 
-    def get_universe(self, start, end):
+    def get_universe(self, start):
         """
-        TODO: Need to determine what companies to get, and how many
-        :return:
+        Retrieve companies that exist prior to start date. Used in backtesting to guarantee
+        companies being tested on will have price data
         """
         with self.con:
             cur = self.con.cursor()
@@ -67,13 +63,24 @@ class MovingAverageCrossDAO(DAO):
             return [d[0] for d in data]
 
     def save_universe_by_volume(self, universe_by_volume):
+        """
+        Method used to store tickers in order by their volume
+        :param universe_by_volume: Dataframe
+        """
         with self.con:
             universe_by_volume.to_sql(con=self.con, name='universe_by_volume', if_exists='append', index=False, flavor='mysql')
 
     def read_universe_by_volume(self):
+        """
+        Retrieve companies and their average volume
+        """
         return pd.read_sql("SELECT * from universe_by_volume", con=self.con)
 
     def read_data(self, ticker, start, end):
+        """
+        Retrieve price data for a specific company within the given time range
+        :return: Dataframe
+        """
         with self.con:
             cur = self.con.cursor()
             # First query is to retrieve the id for the given symbol
@@ -103,6 +110,10 @@ class MovingAverageCrossDAO(DAO):
         return meta_id
 
     def save_maco_meta(self, data):
+        """
+        Save meta dave on a MACO strategy
+        :param data: Dataframe of the meta information regarding a Moving Average Crossover
+        """
         timestamp = datetime.datetime.now()
         data.append(timestamp)
         # Build the parametrized query string
@@ -123,6 +134,11 @@ class MovingAverageCrossDAO(DAO):
         #    data.to_sql(con=self.con, name='maco', if_exists='append', index=False, flavor='mysql')
 
     def read_maco_meta(self, universe):
+        """
+        Retrieves each MACO strategy ran based on volume type
+        :param universe: String -  {small_volume or large_volume}
+        :return: Dataframe - Meta data and parameters for MACO strategy
+        """
         try:
             sql = "SELECT * FROM maco WHERE universe_type = %(universe_type)s"
             columns = ['id', 'ticker_1', 'ticker_2', 'ticker_3', 'ticker_4',
@@ -140,6 +156,12 @@ class MovingAverageCrossDAO(DAO):
         return results
 
     def save_signals(self, signals, ticker, maco_id):
+        """
+        Saves the signals generated from the MACO strategy, with a foriegn key to the maco_meta table
+        :param signals: Dataframe - Signals generated from the MACO strategy
+        :param ticker: String - Company that had signals generated for by the MACO strategy
+        :param maco_id: Int - Foreign Key that releates maco_signals and maco_meta table
+        """
         timestamp = datetime.date.today()
         signals['maco_id'] = maco_id
         signals['ticker'] = ticker
@@ -152,6 +174,9 @@ class MovingAverageCrossDAO(DAO):
             signals.to_sql(con=self.con, name='maco_signals', if_exists='append', index=False, flavor='mysql')
 
     def read_maco_signals(self, maco_id, ticker_name):
+        """
+        Read signals generated from a specific MACO strategy and company
+        """
         try:
             sql = "SELECT * FROM maco_signals WHERE maco_id = %(maco_id)s and ticker = %(ticker)s"
             results = pd.read_sql(sql, self.con, params={"maco_id": maco_id, "ticker": ticker_name})
@@ -163,6 +188,11 @@ class MovingAverageCrossDAO(DAO):
         return results
 
     def save_maco_backtest(self, data, maco_id):
+        """
+        Save the complete backtest of the MACO strategy
+        :param data: Dataframe - portfolio of positions and capital
+        :param maco_id: Int - Foreign key relating to the maco_meta table
+        """
         timestamp = datetime.datetime.now()
         data['maco_id'] = maco_id
         data['created_date'] = timestamp
@@ -176,6 +206,10 @@ class MovingAverageCrossDAO(DAO):
             clean_data.to_sql(con=self.con, name='maco_backtest', if_exists='append', index=False, flavor='mysql')
 
     def read_maco_backtest(self, maco_id):
+        """
+        Read any backtest from database based on its maco_id
+        :return: Dataframe - portfolio of positions and capital
+        """
         try:
             sql = "SELECT * FROM maco_backtest WHERE maco_id = %(maco_id)s "
             results = pd.read_sql(sql, self.con, params={"maco_id": maco_id})
