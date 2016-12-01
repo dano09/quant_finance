@@ -21,9 +21,7 @@ class PlotResults(Plotter, Table):
     @staticmethod
     def setup_figure(self):
         """
-        Creates and formats time-series graph
-        :param number_of_events: Int - Used for determining height of the figure
-        :return: The figure
+        Creates and formats time-series graph comparing low and high volume portfolios
         """
         fig = plt.figure(figsize=(12, 5))
         fig.patch.set_facecolor('silver')
@@ -46,8 +44,7 @@ class PlotResults(Plotter, Table):
         ax.plot(data[1], 'c', lw=2.5)
         ax.legend(['Small Volume Portfolio', 'Large Volume Portfolio'], loc=2, prop={'size': 7})
 
-
-    def calculate_annualized_return(self, starting_cap, ending_cap, years):
+    def calculate_annualized_return(starting_cap, ending_cap, years):
         return (((ending_cap - starting_cap) / starting_cap) / years) * 100
 
     def create_row(self, backtest, trades):
@@ -92,30 +89,27 @@ class PlotResults(Plotter, Table):
 
     @staticmethod
     def create_table(self, data=None):
-
         cell_text = self.create_cell_text(self)
-
         row_labels = self.create_row_labels()
-
         column_labels = ['Starting Capital', 'Number of Trades', 'Ending Capital', 'Annualized Return']
-
         colors = self.create_table_colors(row_labels, column_labels, cell_text)
-
         table = plt.table(cellText=cell_text, cellColours=colors[0],
                           rowColours=colors[1], rowLabels=row_labels,
                           colColours=colors[2], colLabels=column_labels,
                           bbox=[0.0, -1.35, 1.0, 1.0],
                           cellLoc='center')
 
-
         table.set_fontsize(8)
         return table
 
     def plot_results(self):
+        """
+        Plot both low-volume and high-volume portfolios for comparison. Also include
+        portfolio table to identify some key parameters, indicators, and results for each portfolio.
+        """
         ax = self.setup_figure(self)
         portfolio_returns = self.get_data(self)
         self.plot_data(self, ax, portfolio_returns)
-
         self.create_table(self)
 
 

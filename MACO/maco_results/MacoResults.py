@@ -1,4 +1,4 @@
-from MarketOnCloseSecurity import MarketOnCloseSecurity
+from MACO.maco_model.MarketOnCloseSecurity import MarketOnCloseSecurity
 
 from MACO.dao.MovingAverageCrossDAO import MovingAverageCrossDAO
 from MACO.maco_display.PlotPortfolio import PlotPortfolio

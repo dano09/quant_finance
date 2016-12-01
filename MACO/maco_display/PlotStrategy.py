@@ -40,9 +40,7 @@ class PlotStrategy(Plotter, Table):
     def setup_figure(self, signal_count):
         """
         Creates and formats figure that contains a time-series graph and table
-        :return: The figure
         """
-
         # Dynamically adjust height of figure based on number of signals. This is to accommodate for
         # the different number of signals that populate the table for different figures.
         # Used for styling purposes

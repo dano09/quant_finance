@@ -25,12 +25,12 @@ class PlotPortfolio(Plotter, Table):
     @staticmethod
     def setup_figure(self):
         """
-        Creates and formats time-series graph
-        :param number_of_events: Int - Used for determining height of the figure
-        :return: The figure
+        Creates and formats figure that contains a time-series graph and table
         """
         # Figure starts at a height of 4 inches and increments an inch every 4 events
+        # Used for styling
         size = (self.trades / 4) + 4
+
         fig = plt.figure(figsize=(15, size))
         fig.patch.set_facecolor('silver')
         fig.suptitle('Portfolio snapshots', fontsize=14, fontweight='bold')
@@ -43,15 +43,19 @@ class PlotPortfolio(Plotter, Table):
 
     @staticmethod
     def get_data(self):
+        """
+        Determine the x and y coordinates for signals to buy or sell stock.
+        The x-axis are Dates, and Y-axis is the value of the moving averages
+        """
         portfolio_data = []
         for security in self.securities:
-            # Buy signal dates
+            # All buy signal dates for the portfolio (X-cord)
             security_data = [self.returns.ix[security.signals.positions == 1.0].index]
-            # Buy signal prices
+            # The value of the portfolio for each buy signal (Y-cord)
             security_data.append(self.returns.total[security.signals.positions == 1.0])
-            # Sell signal dates
+            # All sell signal dates for the portfolio (X-cord)
             security_data.append(self.returns.ix[security.signals.positions == -1.0].index)
-            # Sell signal prices
+            # The value of the portfolio for each sell signal (Y-cord)
             security_data.append(self.returns.total[security.signals.positions == -1.0])
             portfolio_data.append(security_data)
 
@@ -59,11 +63,13 @@ class PlotPortfolio(Plotter, Table):
 
     @staticmethod
     def plot_data(self, ax, data):
-        #ax.plot(self.security.bars['close_price'].astype(float), color='navy', lw=2.5)
+        # Plot portfolio returns
         ax.plot(self.returns['total'], color='navy', lw=3)
-        #self.returns['total'].plot(ax=ax, color='navy', lw=3.)
+
+        # Colors are determined by the Set3 spectrum, evenly spaced for each security
         colors = plt.cm.Set3(np.linspace(0, 1, len(self.securities)))
-        # FOR EACH SECURITY
+
+        # Identify each trade made for the portfolio and place a market on the portfolio return curve
         for i, security in enumerate(self.securities):
             ax.plot(data[i][0], data[i][1], '^', markersize=9, color=colors[i], label=str(security.symbol))
             ax.plot(data[i][2], data[i][3], 'v', markersize=9, color=colors[i], label='_nolegend_')
@@ -73,7 +79,6 @@ class PlotPortfolio(Plotter, Table):
 
     @staticmethod
     def create_cell_text(self, events, event_dates, b_dates=None, s_dates=None):
-
         table = []
         # Create a table row for each event
         table_data = self.returns.copy(deep=True)
@@ -138,24 +143,19 @@ class PlotPortfolio(Plotter, Table):
         plt.tight_layout()
         table.set_fontsize(9)
 
-
     def plot_equity_curve(self):
         """
-        Plot the equity curve of the portfolio
-        :return:
+        Plot the equity curve of the portfolio in dollars and display trade table showing
+        the state of the portfolio at event-specific time frames.
         """
-        # Plot the equity curve in dollars
-
+        # Plot the equity curve in dollars and display trade table
         ax = self.setup_figure(self)
         data = self.get_data(self)
         self.plot_data(self, ax, data)
         self.create_table(self)
 
-
     @staticmethod
     def setup_graph(self):
-        # Figure starts at a height of 4 inches and increments an inch every 4 events
-        size = (self.trades / 4) + 4
         fig = plt.figure(figsize=(12, 5))
         fig.patch.set_facecolor('silver')
         fig.suptitle('Backtested Portfolio Results', fontsize=14, fontweight='bold')
@@ -166,7 +166,10 @@ class PlotPortfolio(Plotter, Table):
         return ax
 
     def plot_large_equity_curve(self):
-        # First figure is a time-series graph with trade indicators
+        """
+        Same as plot_equity_curve but for larger portfolios will split the equity curve and
+        trade table into two different figures for readability
+        """
         ax = self.setup_graph(self)
         data = self.get_data(self)
         self.plot_data(self, ax, data)
@@ -174,6 +177,7 @@ class PlotPortfolio(Plotter, Table):
         # Second figure is a table showing holdings and total value of portfolio as different events occur
         size = (self.trades / 4) + 4
         fig = plt.figure(figsize=(12, size))
+        # Styling to remove axis from overlapping table
         plt.axis('off')
         self.create_table(self)
 
