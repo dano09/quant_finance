@@ -48,6 +48,7 @@ def setup_for_graphs(maco_meta):
 
     return signal_portfolio, plotter, maco_backtest
 
+
 def display_maco_signals(securities):
     """Display signals generated from MACO"""
     for security in securities:
@@ -59,12 +60,10 @@ if __name__ == "__main__":
 
     # Display results for small-cap portfolio
     small_cap_meta = ma_dao.read_maco_meta('small_cap')
-
     mocp_small, plotter_small, backtest_small = setup_for_graphs(small_cap_meta)
 
     # Display signals generated for each small cap company
     display_maco_signals(mocp_small.market_on_close_securities)
-
 
     if plotter_small.trades > 20:
         print ""
@@ -73,10 +72,8 @@ if __name__ == "__main__":
         # Display portfolio and events
         plotter_small.plot_equity_curve()
 
-
     # Display results for large-cap portfolio
     large_cap_meta = ma_dao.read_maco_meta('large_cap')
-
 
     mocp_large, plotter_large, backtest_large = setup_for_graphs(large_cap_meta)
 

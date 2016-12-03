@@ -15,12 +15,12 @@ class Table(object):
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    def create_cell_text(self, events, event_dates, b_dates, s_dates):
-        """"""
+    def create_cell_text(self, b_dates, s_dates):
+        """Assign data to each cell in a table"""
         raise NotImplementedError("Must implement create_cell_text()!")
 
     @abstractmethod
-    def create_row_labels(data):
+    def create_row_labels(self, data):
         """"""
         raise NotImplementedError("Must implement create_row_labels()!")
 

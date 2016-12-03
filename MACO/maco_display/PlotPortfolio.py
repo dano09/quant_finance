@@ -22,8 +22,7 @@ class PlotPortfolio(Plotter, Table):
         self.event_dates = event_dates
         self.trades = trades
 
-    @staticmethod
-    def setup_figure(self):
+    def setup_figure(self, event_count=None):
         """
         Creates and formats figure that contains a time-series graph and table
         """
@@ -41,7 +40,6 @@ class PlotPortfolio(Plotter, Table):
 
         return ax
 
-    @staticmethod
     def get_data(self):
         """
         Determine the x and y coordinates for signals to buy or sell stock.
@@ -61,7 +59,6 @@ class PlotPortfolio(Plotter, Table):
 
         return portfolio_data
 
-    @staticmethod
     def plot_data(self, ax, data):
         # Plot portfolio returns
         ax.plot(self.returns['total'], color='navy', lw=3)
@@ -76,16 +73,14 @@ class PlotPortfolio(Plotter, Table):
 
         plt.legend(numpoints=1, prop={'size': 7})
 
-
-    @staticmethod
-    def create_cell_text(self, events, event_dates, b_dates=None, s_dates=None):
+    def create_cell_text(self, b_dates=None, s_dates=None):
         table = []
         # Create a table row for each event
         table_data = self.returns.copy(deep=True)
         # Remove database keys and price_date from the dataframe
         table_data.drop(['id', 'maco_id', 'price_date', 'created_date'], axis=1, inplace=True)
-        for d in event_dates:
-            event_list = events[d.strftime("%Y-%m-%d")]
+        for d in self.event_dates:
+            event_list = self.events[d.strftime("%Y-%m-%d")]
             # Some dates have multiple events
             for e in event_list:
                 row = [d.strftime("%Y-%m-%d")]
@@ -99,14 +94,12 @@ class PlotPortfolio(Plotter, Table):
 
         return sorted(table)
 
-    @staticmethod
-    def create_row_labels(num_of_rows):
+    def create_row_labels(self, num_of_rows):
         rows = []
         for i in range(num_of_rows):
             rows.append(i + 1)
         return rows
 
-    @staticmethod
     def create_table_colors(self, rows, num_of_columns, table_data):
         cell_colors = []
         positive_returns = ['lightgreen'] * num_of_columns
@@ -124,15 +117,14 @@ class PlotPortfolio(Plotter, Table):
 
         return [cell_colors, row_colors, col_colors]
 
-    @staticmethod
     def create_table(self, data=None):
-        cell_text = self.create_cell_text(self, self.events, self.event_dates)
+        cell_text = self.create_cell_text()
         row_labels = self.create_row_labels(len(cell_text))
 
         column_labels = ['Date', 'Event', 'Holdings', 'Cash', 'Total']
         column_labels[2:2] = self.tickers
 
-        colors = self.create_table_colors(self, row_labels, len(column_labels), cell_text)
+        colors = self.create_table_colors(row_labels, len(column_labels), cell_text)
 
         table = plt.table(cellText=cell_text, cellColours=colors[0],
                           rowColours=colors[1], rowLabels=row_labels,
@@ -149,12 +141,11 @@ class PlotPortfolio(Plotter, Table):
         the state of the portfolio at event-specific time frames.
         """
         # Plot the equity curve in dollars and display trade table
-        ax = self.setup_figure(self)
-        data = self.get_data(self)
-        self.plot_data(self, ax, data)
-        self.create_table(self)
+        ax = self.setup_figure()
+        data = self.get_data()
+        self.plot_data(ax, data)
+        self.create_table()
 
-    @staticmethod
     def setup_graph(self):
         fig = plt.figure(figsize=(12, 5))
         fig.patch.set_facecolor('silver')
@@ -170,16 +161,16 @@ class PlotPortfolio(Plotter, Table):
         Same as plot_equity_curve but for larger portfolios will split the equity curve and
         trade table into two different figures for readability
         """
-        ax = self.setup_graph(self)
-        data = self.get_data(self)
-        self.plot_data(self, ax, data)
+        ax = self.setup_graph()
+        data = self.get_data()
+        self.plot_data(ax, data)
 
         # Second figure is a table showing holdings and total value of portfolio as different events occur
         size = (self.trades / 4) + 4
         fig = plt.figure(figsize=(12, size))
         # Styling to remove axis from overlapping table
         plt.axis('off')
-        self.create_table(self)
+        self.create_table()
 
 
 

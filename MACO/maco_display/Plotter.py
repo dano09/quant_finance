@@ -15,7 +15,7 @@ class Plotter(object):
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    def setup_figure(self):
+    def setup_figure(self, event_count):
         """Initial setup for graphics, such as size, color, subplots, ect."""
         raise NotImplementedError("Must implement setup_figure()!")
 

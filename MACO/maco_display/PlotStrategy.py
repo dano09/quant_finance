@@ -14,9 +14,8 @@ class PlotStrategy(Plotter, Table):
 
     def __init__(self, security):
         self.security = security
-        self.data = self.get_data(self)
+        self.data = self.get_data()
 
-    @staticmethod
     def get_data(self):
         """
         Determine the x and y coordinates for signals to buy or sell stock.
@@ -36,7 +35,6 @@ class PlotStrategy(Plotter, Table):
 
         return [buy_dates, mavg_buy_signal, sell_dates, mavg_sell_signal]
 
-    @staticmethod
     def setup_figure(self, signal_count):
         """
         Creates and formats figure that contains a time-series graph and table
@@ -55,7 +53,6 @@ class PlotStrategy(Plotter, Table):
         ax.set_ylabel('Price in $ (USD)')
         return ax
 
-    @staticmethod
     def plot_data(self, ax, data):
         """
         Plot closing price, moving averages, and signals
@@ -74,8 +71,7 @@ class PlotStrategy(Plotter, Table):
         # Plot Sell Signals
         ax.plot(data[2], data[3], 'v', markersize=10, color='lightcoral')
 
-    @staticmethod
-    def create_cell_text(self, b_dates, s_dates, events=None, event_dates=None):
+    def create_cell_text(self, b_dates, s_dates):
         """
         Generates the data to be put in each cell of the table
         :param b_dates: [Datetime] - Dates of buy signals
@@ -96,14 +92,12 @@ class PlotStrategy(Plotter, Table):
 
         return sorted(table)
 
-    @staticmethod
-    def create_row_labels(data):
+    def create_row_labels(self, data):
         row_labels = []
         for i, v in enumerate(data):
             row_labels.append(str(i + 1))
         return row_labels
 
-    @staticmethod
     def create_table_colors(self, rows, num_of_columns=None, table_data=None):
         cell_colors = []
         buy_color = ['lightgreen'] * 3
@@ -119,12 +113,11 @@ class PlotStrategy(Plotter, Table):
 
         return [cell_colors, row_colors, col_colors]
 
-    @staticmethod
     def create_table(self, data, event=None, event_dates=None):
-        cell_text = self.create_cell_text(self, data[0], data[2])
+        cell_text = self.create_cell_text(data[0], data[2])
         row_labels = self.create_row_labels(cell_text)
         col_labels = ['Date', 'Signal', 'Price']
-        colors = self.create_table_colors(self, row_labels)
+        colors = self.create_table_colors(row_labels)
 
         plt.table(cellText=cell_text, cellColours=colors[0],
                   rowColours=colors[1], rowLabels=row_labels,
@@ -142,10 +135,10 @@ class PlotStrategy(Plotter, Table):
         price that stock was bought or sold based on a signal
         """
         events = self.get_total_events()
-        ax = self.setup_figure(self, events)
-        data = self.get_data(self)
-        self.plot_data(self, ax, data)
-        self.create_table(self, data)
+        ax = self.setup_figure(events)
+        data = self.get_data()
+        self.plot_data(ax, data)
+        self.create_table(data)
         plt.show()
 
 

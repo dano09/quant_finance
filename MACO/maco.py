@@ -11,7 +11,6 @@ import traceback
 import pandas as pd
 
 from MACO.dao.MovingAverageCrossDAO import MovingAverageCrossDAO
-from MACO.maco_display.PlotStrategy import PlotStrategy
 from MACO.maco_model.EventGenerator import EventGenerator
 from MACO.maco_model.MarketOnClosePortfolio import MarketOnClosePortfolio
 from MACO.maco_model.MarketOnCloseSecurity import MarketOnCloseSecurity
@@ -20,22 +19,28 @@ from MACO.maco_model.MovingAverageCrossStrategy import MovingAverageCrossStrateg
 
 def run_strategy(start_date, end_date, universe, s_mavg, l_mavg):
     """
-
-    :param start_date:
-    :param end_date:
-    :param universe:
-    :param s_mavg:
-    :param l_mavg:
-    :return:
+    Perform the Moving Average Crossover on each company in the universe
+    :param start_date: datetime - Start of Strategy
+    :param end_date: datetime - End of Strategy
+    :param universe: list (string) - ticker for each company
+    :param s_mavg: int - shorter moving average window
+    :param l_mavg: int - longer moving average window
+    :return: list (MarketOnCloseSecurities) - signals generated from MACO
     """
-
     list_of_securities = []
     for ticker in universe:
         print "\nProcessing ticker: " + str(ticker)
+        # Get price data
         bars = ma_dao.read_data(ticker, start_date, end_date)
         bars.set_index(bars["price_date"], drop=True, append=False, inplace=True, verify_integrity=False)
+
+        # Create the Strategy
         mac = MovingAverageCrossStrategy(ticker, bars, short_window=s_mavg, long_window=l_mavg)
+
+        # Generate signals from the strategy
         signals = mac.generate_signals()
+
+        # Encapsulate the price data, signals, and company in a MarketOnCloseSecurity object
         mocs = MarketOnCloseSecurity(ticker, bars, signals)
         list_of_securities.append(mocs)
 
@@ -43,6 +48,10 @@ def run_strategy(start_date, end_date, universe, s_mavg, l_mavg):
 
 
 def calculate_avg_volume(bars):
+    """
+    :param bars: dataframe - OHLCAV data for a company
+    :return: double - Average volume
+    """
     try:
         avg_volume = bars['volume']
         length = bars.shape
@@ -60,10 +69,10 @@ def get_universe_by_market_caps(start, end, calculate_flag):
     Tickers are sorted by volume in database. If first time being ran,
     calculate_flag should be set to true to perform the calculation.
     Otherwise just retrieve entries from the database.
-    :param start:
-    :param end:
-    :param calculate_flag: Used to calculate average volume.
-    :return:
+    :param start: Datetime
+    :param end: Datetime
+    :param calculate_flag: boolean - Used to calculate average volume.
+    :return: tuple - low volume tickers and high volume tickers
     """
     # Calculate average volume for each ticker. Results are saved in the
     # database for performance.
@@ -85,28 +94,43 @@ def get_universe_by_market_caps(start, end, calculate_flag):
                 print(traceback.format_exception(*sys.exc_info()))
 
         # To handle liquidity concerns, only consider smaller cap stocks with an average volume of at least 200,000
-        #TODO: Change variable names
         volume_df = volume_df[volume_df.volume > 200000]
         sorted_df = volume_df.sort_values('volume', axis=0)
         sorted_df['ticker'] = sorted_df.index
+
         # Remove any tickers that could represent secondary class shares. (E.G. BF-B)
         clean_df = sorted_df[~sorted_df['ticker'].str.contains("-")]
 
         ma_dao.save_universe_by_volume(clean_df)
 
+    # Retrieve tickers by volume from the database
     universe_by_volume = ma_dao.read_universe_by_volume()
 
     df_length = universe_by_volume.shape
     total = df_length[0]
     half = total / 2
 
+    # Split universe by high and low volume
     low_cap = universe_by_volume.head(half)['ticker'].values
     high_cap = universe_by_volume.tail(half)['ticker'].values
 
-    return low_cap, high_cap;
+    return low_cap, high_cap
 
 
 def perform_maco(universe, dates, mavg_windows, capital):
+    """
+    1. Runs the MACO Strategy for each Security and generates the MOCP portfolio.
+    2. Runs backtest on MOCP portfolio
+    3. Generates total number of trades for analysis
+    :param universe: list - Companies that make up the portfolio
+    :param dates: tuple (datetimes) - Start and end date to run strategy over
+    :param mavg_windows: tuple (ints) - Defines how the MACO generates signals
+    :param capital: int - Starting capital for the portfolio
+    :return:
+        1. dataframe - Portfolio of the companies and their signals to generate trades
+        2. dataframe - Resulting backtested portfolio
+        3. int - number of trades executed during backtest
+    """
     try:
         # Run strategy on universe of securities
         list_of_securities = run_strategy(dates[0], dates[1], universe, mavg_windows[0], mavg_windows[1])
@@ -121,14 +145,6 @@ def perform_maco(universe, dates, mavg_windows, capital):
         event_gen = EventGenerator(signal_portfolio, backtest_portfolio)
         trade_count = event_gen.get_trade_count()
 
-        # Plot Strategies
-        for security in list_of_securities:
-            plot_strat = PlotStrategy(security)
-            plot_strat.plot_price_with_signals()
-        # Plot portfolio
-        #plot_portfolio = PlotPortfolio(portfolio, backtest_results)
-        #trades = plot_portfolio.plot_equity_curve(start, end)
-
     except ValueError as e:
         print "Error: " + str(e)
         raise
@@ -136,6 +152,11 @@ def perform_maco(universe, dates, mavg_windows, capital):
     return signal_portfolio, backtest_portfolio, trade_count
 
 def generate_parameters(stock_universe):
+    """
+    Creates the parameters used in the MACO strategy
+    :param stock_universe: tuple
+    :return: tuple - MACO parameters
+    """
     #TODO: Determine # of shares to buy/sell in here
     start_capital = 100000
 
@@ -144,55 +165,59 @@ def generate_parameters(stock_universe):
     #windows = (180, 400), (275, 350), (340, 375)
     windows = (275, 350)
 
-    #Get smallest 4 companies by volume
-    print stock_universe
+    # Get smallest 4 companies by volume
     small_caps = stock_universe[0][:4]
 
-    #Get largest 4 companies by volume
+    # Get largest 4 companies by volume
     large_caps = stock_universe[1][-4:]
 
     return windows, small_caps, large_caps, start_capital
 
 
-def run_maco(maco_params):
+def setup_maco(maco_params):
+    """
+    Set up parameters and perform the Moving Average Crossover. Save the meta-data,
+    signal generations, and backtesting results to the database
+    :param maco_params: list - initial parameters to run the MACO strategy
+    """
+    # Identify parameters
+    dates = maco_params[0], maco_params[1]
+    lookback_windows = maco_params[2]
+    tickers = maco_params[3]
+    capital = maco_params[4]
+    universe_type = maco_params[5]
 
-        # Identify parameters
-        dates = maco_params[0], maco_params[1]
-        lookback_windows = maco_params[2]
-        tickers = maco_params[3]
-        capital = maco_params[4]
-        universe_type = maco_params[5]
+    # Collect metadata on the strategy implemented
+    meta_data = [tickers[0], tickers[1], tickers[2], tickers[3],
+                dates[0], dates[1],
+                lookback_windows[0], lookback_windows[1],
+                capital,
+                universe_type]
 
-        # Collect metadata on the strategy implemented
-        meta_data = [tickers[0], tickers[1], tickers[2], tickers[3],
-                     dates[0], dates[1],
-                     lookback_windows[0], lookback_windows[1],
-                     capital,
-                     universe_type]
+    try:
+        # Market on Close Portfolio (MOCP) contains the initial data for backtesting
+        # while the backtest_portfolio contains the results of the backtest
+        mocp, backtest_portfolio, num_of_trades = perform_maco(tickers, dates, lookback_windows, capital)
+        backtest_results = [num_of_trades, backtest_portfolio['total'][-1]]
+        meta_data.extend(backtest_results)
 
-        try:
-            # Market on Close Portfolio (MOCP)
-            mocp, backtest_portfolio, num_of_trades = perform_maco(tickers, dates, lookback_windows, capital)
-            backtest_results = [num_of_trades, backtest_portfolio['total'][-1]]
-            meta_data.extend(backtest_results)
+        # Save meta data and parameters of MACO strategy
+        #row_id = ma_dao.write_data(meta_data)
 
-            # Save meta data and parameters of MACO strategy
-            row_id = ma_dao.write_data(meta_data)
+        # Save signals generated for each security
+        #for ticker_id, security in enumerate(mocp.market_on_close_securities):
+        #    ma_dao.save_signals(security.signals, security.symbol, row_id)
 
-            # Save signals generated for each security
-            for ticker_id, security in enumerate(mocp.market_on_close_securities):
-                ma_dao.save_signals(security.signals, security.symbol, row_id)
+        # Save backtest results
+        #ma_dao.save_maco_backtest(backtest_portfolio, row_id)
 
-            # Save backtest results
-            ma_dao.save_maco_backtest(backtest_portfolio, row_id)
+    except Exception as e:
+        print "Could not complete MACO for start date: " + str(dates[0]) + " and end date: " + str(dates[1]) + \
+                " with lookback periods of: " + str(lookback_windows[0]) + " and: " + str(lookback_windows[1]) + \
+                " for the following companies:  " + str(tickers)
 
-        except Exception as e:
-            print "Could not complete MACO for start date: " + str(dates[0]) + " and end date: " + str(dates[1]) + \
-                  " with lookback periods of: " + str(lookback_windows[0]) + " and: " + str(lookback_windows[1]) + \
-                  " for the following companies:  " + str(tickers)
-
-            print "E: " + str(e)
-            print(traceback.format_exception(*sys.exc_info()))
+        print "E: " + str(e)
+        print(traceback.format_exception(*sys.exc_info()))
 
 
 def validate_dates(start_date, end_date):
@@ -228,7 +253,7 @@ if __name__ == "__main__":
     calculate_flag = False
 
     # Limit universe to stocks within backtest history
-    tickers = ma_dao.get_universe(start, end)
+    tickers = ma_dao.get_universe(start)
 
     universe = get_universe_by_market_caps(start, end, calculate_flag)
 
@@ -239,10 +264,10 @@ if __name__ == "__main__":
     large_cap_params = start, end, params[0], params[2], params[3], 'large_cap'
 
     # Test Small Caps
-    run_maco(small_cap_params)
+    setup_maco(small_cap_params)
 
     # Test Large Caps
-    run_maco(large_cap_params)
+    setup_maco(large_cap_params)
 
 
     print("Time to complete:         %s seconds" % round((time.time() - start_time), 4))

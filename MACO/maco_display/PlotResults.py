@@ -18,8 +18,7 @@ class PlotResults(Plotter, Table):
         self.s_trades = trades[0]
         self.l_trades = trades[1]
 
-    @staticmethod
-    def setup_figure(self):
+    def setup_figure(self, event_count=None):
         """
         Creates and formats time-series graph comparing low and high volume portfolios
         """
@@ -34,18 +33,16 @@ class PlotResults(Plotter, Table):
         ax.set_ylabel('Portfolio value in $ (USD)')
         return ax
 
-    @staticmethod
     def get_data(self):
         return self.s_backtest['total'], self.l_backtest['total']
 
-    @staticmethod
     def plot_data(self, ax, data):
         ax.plot(data[0], 'navy', lw=2.5)
         ax.plot(data[1], 'c', lw=2.5)
         ax.legend(['Small Volume Portfolio', 'Large Volume Portfolio'], loc=2, prop={'size': 7})
 
-    def calculate_annualized_return(starting_cap, ending_cap, years):
-        return (((ending_cap - starting_cap) / starting_cap) / years) * 100
+    def calculate_annualized_return(self, s_cap, e_cap, years):
+        return (((e_cap - s_cap) / s_cap) / years) * 100
 
     def create_row(self, backtest, trades):
         row = []
@@ -64,12 +61,12 @@ class PlotResults(Plotter, Table):
         row.append("%.3f" % annualized_return + "%")
         return row
 
-    def create_cell_text(self, events=None, event_dates=None, b_dates=None, s_dates=None):
+    def create_cell_text(self, b_dates=None, s_dates=None):
         small_vol_row = self.create_row(self.s_backtest, self.s_trades)
         large_vol_row = self.create_row(self.l_backtest, self.l_trades)
         return small_vol_row, large_vol_row
 
-    def create_row_labels(self):
+    def create_row_labels(self, data=None):
         row1 = 'Low-Vol Portfolio'
         row2 = 'High-Vol Portfolio'
         return row1, row2
@@ -87,7 +84,6 @@ class PlotResults(Plotter, Table):
 
         return [cell_colors, row_colors, col_colors]
 
-    @staticmethod
     def create_table(self, data=None):
         cell_text = self.create_cell_text(self)
         row_labels = self.create_row_labels()
@@ -107,9 +103,9 @@ class PlotResults(Plotter, Table):
         Plot both low-volume and high-volume portfolios for comparison. Also include
         portfolio table to identify some key parameters, indicators, and results for each portfolio.
         """
-        ax = self.setup_figure(self)
-        portfolio_returns = self.get_data(self)
-        self.plot_data(self, ax, portfolio_returns)
-        self.create_table(self)
+        ax = self.setup_figure()
+        portfolio_returns = self.get_data()
+        self.plot_data(ax, portfolio_returns)
+        self.create_table()
 
 
