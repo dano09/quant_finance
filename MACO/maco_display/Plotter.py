@@ -25,7 +25,7 @@ class Plotter(object):
         raise NotImplementedError("Must implement get_data()!")
 
     @abstractmethod
-    def plot_data(self, ax, data):
+    def plot_data(self, ax, data, plot_type):
         """Plots the data on the graph"""
         raise NotImplementedError("Must implement get_data()!")
 

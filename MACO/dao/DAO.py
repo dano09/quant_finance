@@ -30,6 +30,6 @@ class DAO(object):
         raise NotImplementedError("Must implement read_data()!")
 
     @abstractmethod
-    def write_data(self, data):
+    def write_data(self, data, flag):
         """Provides logic to write a Dataframe object to the database"""
         raise NotImplementedError("Must implement write_data()!")

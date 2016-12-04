@@ -59,7 +59,7 @@ class PlotPortfolio(Plotter, Table):
 
         return portfolio_data
 
-    def plot_data(self, ax, data):
+    def plot_data(self, ax, data, plot_type=None):
         # Plot portfolio returns
         ax.plot(self.returns['total'], color='navy', lw=3)
 
@@ -71,7 +71,7 @@ class PlotPortfolio(Plotter, Table):
             ax.plot(data[i][0], data[i][1], '^', markersize=9, color=colors[i], label=str(security.symbol))
             ax.plot(data[i][2], data[i][3], 'v', markersize=9, color=colors[i], label='_nolegend_')
 
-        plt.legend(numpoints=1, prop={'size': 7})
+        plt.legend(numpoints=1, prop={'size': 13})
 
     def create_cell_text(self, b_dates=None, s_dates=None):
         table = []
@@ -132,8 +132,9 @@ class PlotPortfolio(Plotter, Table):
                           bbox=[0.0, 0.0, 1.0, 1.0],
                           cellLoc='bottom')
 
+
         plt.tight_layout()
-        table.set_fontsize(9)
+        table.set_fontsize(10)
 
     def plot_equity_curve(self):
         """
@@ -147,9 +148,9 @@ class PlotPortfolio(Plotter, Table):
         self.create_table()
 
     def setup_graph(self):
-        fig = plt.figure(figsize=(12, 5))
+        fig = plt.figure(figsize=(10, 5))
         fig.patch.set_facecolor('silver')
-        fig.suptitle('Backtested Portfolio Results', fontsize=14, fontweight='bold')
+        fig.suptitle('Equity Curve - Low Volume Portfolio', fontsize=14, fontweight='bold')
         ax = fig.add_subplot(111)
         ax.set_axis_bgcolor('beige')
         ax.set_xlabel('Time Horizon of Backtest')
@@ -167,10 +168,11 @@ class PlotPortfolio(Plotter, Table):
 
         # Second figure is a table showing holdings and total value of portfolio as different events occur
         size = (self.trades / 4) + 4
-        fig = plt.figure(figsize=(12, size))
+        fig = plt.figure(figsize=(16, size))
         # Styling to remove axis from overlapping table
         plt.axis('off')
         self.create_table()
+        plt.savefig('table_high_wide_windows')
 
 
 

@@ -1,5 +1,13 @@
-from MACO.maco_model.MarketOnCloseSecurity import MarketOnCloseSecurity
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+"""
+Author: Justin Dano 12/04/2016
 
+"""
+import time
+
+from MACO.maco_display.PlotVolumeAnalysis import PlotVolumeAnalysis
+from MACO.maco_model.MarketOnCloseSecurity import MarketOnCloseSecurity
 from MACO.dao.MovingAverageCrossDAO import MovingAverageCrossDAO
 from MACO.maco_display.PlotPortfolio import PlotPortfolio
 from MACO.maco_display.PlotResults import PlotResults
@@ -12,16 +20,17 @@ def generate_mocs(tickers, maco_id, start, end):
     """Generates MarketOnCloseSecurity objects"""
     securities = []
     for ticker in tickers:
-        signal_data = ma_dao.read_maco_signals(maco_id, ticker)
-        signal_data.set_index(signal_data['price_date'], drop=True, inplace=True)
-        bars = ma_dao.read_data(ticker, start, end)
-        bars.set_index(bars["price_date"], drop=True, inplace=True, )
-        mocs = MarketOnCloseSecurity(ticker, bars, signal_data)
-        securities.append(mocs)
+        if ticker:
+            signal_data = ma_dao.read_maco_signals(maco_id, ticker)
+            signal_data.set_index(signal_data['price_date'], drop=True, inplace=True)
+            bars = ma_dao.read_data(ticker, start, end)
+            bars.set_index(bars["price_date"], drop=True, inplace=True, )
+            mocs = MarketOnCloseSecurity(ticker, bars, signal_data)
+            securities.append(mocs)
 
     return securities
 
-def setup_for_graphs(maco_meta):
+def setup_portfolio(maco_meta):
     # Get MACO id
     maco_id = maco_meta['id'].values[0]
 
@@ -55,41 +64,81 @@ def display_maco_signals(securities):
         plot_strat = PlotStrategy(security)
         plot_strat.plot_price_with_signals()
 
+
+def setup_analysis(maco_meta, quantity=None):
+    # Get MACO id
+    backtests = []
+    maco_ids = maco_meta['id'].values
+
+    if quantity:
+
+        if maco_meta['universe_type'][0] == 'small_vol':
+            maco_ids = maco_ids[:quantity]
+        else:
+            maco_ids = maco_ids[-quantity:]
+
+    for maco_id in maco_ids:
+        # Retrieve MACO backtest from database
+        maco_backtest = ma_dao.read_maco_backtest(maco_id)
+        maco_backtest.set_index(maco_backtest['price_date'], drop=True, inplace=True)
+        backtests.append(maco_backtest)
+
+    return backtests
+
+
 if __name__ == "__main__":
+    start_time = time.time()
     ma_dao = MovingAverageCrossDAO("localhost", "root", "GoldfishSmiles.com", "securities_master")
+    analysis_flag = False
+    s_window = 30
+    l_window = 120
 
-    # Display results for small-cap portfolio
-    small_cap_meta = ma_dao.read_maco_meta('small_cap')
-    mocp_small, plotter_small, backtest_small = setup_for_graphs(small_cap_meta)
+    small_vol_meta = ma_dao.read_maco_meta('small_vol', s_window, l_window)
+    large_vol_meta = ma_dao.read_maco_meta('large_vol', s_window, l_window)
 
-    # Display signals generated for each small cap company
-    display_maco_signals(mocp_small.market_on_close_securities)
+    if analysis_flag:
+        s_backtests = setup_analysis(small_vol_meta)
+        l_backtests = setup_analysis(large_vol_meta)
+        pva = PlotVolumeAnalysis(s_backtests, l_backtests)
+        pva.plot_results()
 
-    if plotter_small.trades > 20:
-        print ""
-        plotter_small.plot_large_equity_curve()
     else:
-        # Display portfolio and events
-        plotter_small.plot_equity_curve()
+        mocp_small, plotter_small, backtest_small = setup_portfolio(small_vol_meta)
+        mocp_large, plotter_large, backtest_large = setup_portfolio(large_vol_meta)
+        """
+        PART 1:
+        Display results for small-volume portfolio
+        """
+        # Display signals generated for each small cap company
+        display_maco_signals(mocp_small.market_on_close_securities)
 
-    # Display results for large-cap portfolio
-    large_cap_meta = ma_dao.read_maco_meta('large_cap')
+        if plotter_small.trades > 20:
+            # Display portfolio and events on two different figures
+            plotter_small.plot_large_equity_curve()
+        else:
+            # Display portfolio and events on same figure
+            plotter_small.plot_equity_curve()
 
-    mocp_large, plotter_large, backtest_large = setup_for_graphs(large_cap_meta)
+        """
+        PART 2:
+        Display results for small-large portfolio
+        """
+        # Display signals generated for each small cap company
+        display_maco_signals(mocp_large.market_on_close_securities)
 
-    # Display signals generated for each small cap company
-    #display_maco_signals(mocp_large.market_on_close_securities)
+        if plotter_large.trades > 20:
+            # Display portfolio and events on two different figures
+            plotter_large.plot_large_equity_curve()
+        else:
+            # Display portfolio and events on same figure
+            plotter_large.plot_equity_curve()
 
-    if plotter_large.trades > 20:
-        print ""
-        #plotter_large.plot_large_equity_curve()
-    else:
-        # Display portfolio and events
-        plotter_large.plot_equity_curve()
+        """
+        PART 3:
+        Display and compare small-volume and large-volume performance
+        """
+        trades = plotter_small.trades, plotter_large.trades
+        pr = PlotResults(backtest_small, backtest_large, trades)
+        pr.plot_results()
 
-
-
-    trades = plotter_small.trades, plotter_large.trades
-    pr = PlotResults(backtest_small, backtest_large, trades)
-    pr.plot_results()
-    print "done"
+    print("Time to complete:         %s seconds" % round((time.time() - start_time), 4))

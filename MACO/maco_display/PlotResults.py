@@ -22,10 +22,10 @@ class PlotResults(Plotter, Table):
         """
         Creates and formats time-series graph comparing low and high volume portfolios
         """
-        fig = plt.figure(figsize=(12, 5))
+        fig = plt.figure(figsize=(8, 5))
         fig.patch.set_facecolor('silver')
         fig.suptitle(
-            'Large vs Small Volume Portfolio Returns using the Moving Average CrossOver Strategy',
+            'Comparing High and Low Volume Portfolios ',
             fontsize=14, fontweight='bold')
         ax = fig.add_subplot(211)
         ax.set_axis_bgcolor('beige')
@@ -36,10 +36,11 @@ class PlotResults(Plotter, Table):
     def get_data(self):
         return self.s_backtest['total'], self.l_backtest['total']
 
-    def plot_data(self, ax, data):
+    def plot_data(self, ax, data, plot_type=None):
         ax.plot(data[0], 'navy', lw=2.5)
         ax.plot(data[1], 'c', lw=2.5)
-        ax.legend(['Small Volume Portfolio', 'Large Volume Portfolio'], loc=2, prop={'size': 7})
+        ax.axhline(y=100000, linewidth=2, color='k')
+        ax.legend(['Small Volume Portfolio', 'Large Volume Portfolio'], loc=2, prop={'size': 10})
 
     def calculate_annualized_return(self, s_cap, e_cap, years):
         return (((e_cap - s_cap) / s_cap) / years) * 100
@@ -95,7 +96,7 @@ class PlotResults(Plotter, Table):
                           bbox=[0.0, -1.35, 1.0, 1.0],
                           cellLoc='center')
 
-        table.set_fontsize(8)
+        table.set_fontsize(60)
         return table
 
     def plot_results(self):

@@ -17,10 +17,9 @@ class MovingAverageCrossStrategy(Strategy):
     short_window - Lookback period for short moving average.
     long_window - Lookback period for long moving average."""
 
-    def __init__(self, symbol, bars, short_window=100, long_window=400):
+    def __init__(self, symbol, bars, short_window, long_window):
         self.symbol = symbol
         self.bars = bars
-
         self.short_window = short_window
         self.long_window = long_window
 
@@ -32,12 +31,10 @@ class MovingAverageCrossStrategy(Strategy):
 
         # Create the set of short and long simple moving averages over the
         # respective periods
-        print_full(self.bars)
-        print self.short_window
-        signals['short_mavg'] = pd.rolling_mean(self.bars['close_price'],
+        signals['short_mavg'] = pd.rolling_mean(self.bars['adj_close_price'],
                                                 self.short_window, min_periods=1)
 
-        signals['long_mavg'] = pd.rolling_mean(self.bars['close_price'],
+        signals['long_mavg'] = pd.rolling_mean(self.bars['adj_close_price'],
                                                self.long_window, min_periods=1)
 
 
@@ -52,7 +49,3 @@ class MovingAverageCrossStrategy(Strategy):
         return signals
 
 
-def print_full(x):
-    pd.set_option('display.max_rows', len(x))
-    print(x)
-    pd.reset_option('display.max_rows')

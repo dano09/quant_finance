@@ -62,10 +62,10 @@ select price_date from daily_price where data_vendor_id = '1' and NOT EXISTS ( s
 
 CREATE TABLE `maco` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `ticker_1` varchar(32) NOT NULL,
-  `ticker_2` varchar(32) NOT NULL,
-  `ticker_3` varchar(32) NOT NULL,
-  `ticker_4` varchar(32) NOT NULL,
+  `ticker_1` varchar(32) NULL,
+  `ticker_2` varchar(32) NULL,
+  `ticker_3` varchar(32) NULL,
+  `ticker_4` varchar(32) NULL,
   `created_date` datetime NOT NULL,
   `start_date` date NOT NULL,
   `end_date` date NOT NULL,
@@ -81,10 +81,10 @@ CREATE TABLE `maco` (
 CREATE TABLE `maco_backtest` (
   `id` int NOT NULL AUTO_INCREMENT,
   `maco_id` int NOT NULL,
-  `ticker_1` varchar(32) NOT NULL,
-  `ticker_2` varchar(32) NOT NULL,
-  `ticker_3` varchar(32) NOT NULL,
-  `ticker_4` varchar(32) NOT NULL,
+  `ticker_1` varchar(32) NULL,
+  `ticker_2` varchar(32) NULL,
+  `ticker_3` varchar(32) NULL,
+  `ticker_4` varchar(32) NULL,
   `created_date` datetime NOT NULL,
   `price_date` date NOT NULL,
   `holdings` decimal(19,2) NULL,
@@ -96,3 +96,4 @@ CREATE TABLE `maco_backtest` (
 
         column_str = """ticker_1, ticker_2, ticker_3, ticker_4, created_date, price_date, holdings,
         cash, total, returns"""
+

@@ -44,7 +44,7 @@ class PlotStrategy(Plotter, Table):
         # Used for styling purposes
         size = (signal_count / 4) + 5
 
-        fig = plt.figure(figsize=(10, size))
+        fig = plt.figure(figsize=(8, size))
         fig.patch.set_facecolor('silver')
         fig.suptitle('Moving Average Crossover for ' + self.security.symbol, fontsize=14, fontweight='bold')
         ax = fig.add_subplot(211)
@@ -53,7 +53,7 @@ class PlotStrategy(Plotter, Table):
         ax.set_ylabel('Price in $ (USD)')
         return ax
 
-    def plot_data(self, ax, data):
+    def plot_data(self, ax, data, plot_type=None):
         """
         Plot closing price, moving averages, and signals
         :param self: MarketOnCloseSecurity
@@ -61,10 +61,10 @@ class PlotStrategy(Plotter, Table):
         :param data: List of (Date,Price) coordinates
         """
         # Plot price and Moving Averages
-        ax.plot(self.security.bars['close_price'].astype(float), color='navy', lw=2.5)
+        ax.plot(self.security.bars['adj_close_price'].astype(float), color='navy', lw=2.5)
         ax.plot(self.security.signals['short_mavg'], 'dodgerblue', lw=2.)
         ax.plot(self.security.signals['long_mavg'], 'sandybrown', lw=2.)
-        ax.legend(['Closing Price', 'Short MAVG', 'Long MVAG'], prop={'size': 7})
+        ax.legend(['Closing Price', 'Short MAVG', 'Long MVAG'], loc=2, prop={'size': 10})
 
         # Plot Buy Signals
         ax.plot(data[0], data[1], '^', markersize=10, color='lightgreen')
@@ -82,12 +82,12 @@ class PlotStrategy(Plotter, Table):
         table = []
         # Generate Buy Rows
         for v in b_dates.values:
-            table_entry = [v.strftime("%Y-%m-%d"), "Buy", "%.4f" % prices.at[v, 'close_price']]
+            table_entry = [v.strftime("%Y-%m-%d"), "Buy", "%.4f" % prices.at[v, 'adj_close_price']]
             table.append(table_entry)
 
         # Generate Sell Rows
         for v in s_dates.values:
-            table_entry = [v.strftime("%Y-%m-%d"), "Sell", "%.4f" % prices.at[v, 'close_price']]
+            table_entry = [v.strftime("%Y-%m-%d"), "Sell", "%.4f" % prices.at[v, 'adj_close_price']]
             table.append(table_entry)
 
         return sorted(table)

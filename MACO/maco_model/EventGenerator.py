@@ -10,7 +10,6 @@ class EventGenerator:
         self.securities = portfolio.market_on_close_securities
         self.backtest_results = backtest_results
 
-    @staticmethod
     def get_data(self):
         portfolio_data = []
         for security in self.securities:
@@ -26,9 +25,7 @@ class EventGenerator:
 
         return portfolio_data
 
-
-    @staticmethod
-    def create_event(date, signal, symbol, bars):
+    def create_event(self, date, signal, symbol, bars):
         price = bars.loc[date]['close_price']
         if signal is 'b':
             event = "B:" + symbol + " @ " + "%.2f" % price
@@ -37,8 +34,7 @@ class EventGenerator:
 
         return event
 
-    @staticmethod
-    def add_event(date, event, events):
+    def add_event(self, date, event, events):
         # Create a new event
         if date not in events:
             events[date] = [event]
@@ -55,9 +51,7 @@ class EventGenerator:
         event_dates = [datetime.strptime(start_date, '%Y-%m-%d').date(),
                        datetime.strptime(end_date, '%Y-%m-%d').date()]
 
-        #trade_count = 0
-
-        data = self.get_data(self)
+        data = self.get_data()
 
         # FOR EACH SECURITY
         for i, security in enumerate(self.securities):
@@ -69,7 +63,6 @@ class EventGenerator:
 
                 event = self.create_event(date, 'b', security.symbol, security.bars)
                 self.add_event(date.strftime("%Y-%m-%d"), event, events)
-                #trade_count += 1
 
             # Create event string for each sell signal
             for date in data[i][2].values:
@@ -78,11 +71,8 @@ class EventGenerator:
 
                 event = self.create_event(date, 's', security.symbol, security.bars)
                 self.add_event(date.strftime("%Y-%m-%d"), event, events)
-                #trade_count += 1
 
         return events, event_dates
-        #return events, event_dates, trade_count
-
 
     def get_trade_count(self):
         # Add up total number of trades for given backtest
@@ -94,7 +84,3 @@ class EventGenerator:
 
         return count_total
 
-def print_full(x):
-    pd.set_option('display.max_rows', len(x))
-    print(x)
-    pd.reset_option('display.max_rows')

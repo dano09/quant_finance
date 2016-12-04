@@ -105,17 +105,24 @@ class MovingAverageCrossDAO(DAO):
 
             return price_data
 
-    def write_data(self, data):
-        meta_id = self.save_maco_meta(data)
+    def write_data(self, data, analysis_flag):
+        meta_id = self.save_maco_meta(data, analysis_flag)
         return meta_id
 
-    def save_maco_meta(self, data):
+    def save_maco_meta(self, data, analysis_flag):
         """
         Save meta dave on a MACO strategy
         :param data: Dataframe of the meta information regarding a Moving Average Crossover
         """
         timestamp = datetime.datetime.now()
         data.append(timestamp)
+
+        # Portfolios for analysis contain only one security
+        if analysis_flag:
+            data.insert(1, None)
+            data.insert(2, None)
+            data.insert(3, None)
+
         # Build the parametrized query string
         column_str = """ticker_1, ticker_2, ticker_3, ticker_4, start_date, end_date, short_mavg,
         long_mavg, start_capital, universe_type, trades, end_capital, created_date"""
@@ -129,24 +136,26 @@ class MovingAverageCrossDAO(DAO):
             cur.executemany(query_string, [data])
             return cur.lastrowid
 
-        #TODO: use to_SQL
+        #TODO: use to_SQL if it can bring back row_id
         #with self.con:
         #    data.to_sql(con=self.con, name='maco', if_exists='append', index=False, flavor='mysql')
 
-    def read_maco_meta(self, universe):
+    def read_maco_meta(self, universe, short_window, long_window):
         """
         Retrieves each MACO strategy ran based on volume type
         :param universe: String -  {small_volume or large_volume}
         :return: Dataframe - Meta data and parameters for MACO strategy
         """
         try:
-            sql = "SELECT * FROM maco WHERE universe_type = %(universe_type)s"
+            sql = "SELECT * FROM maco WHERE universe_type = %(universe_type)s and short_mavg = %(s_mavg)s"
             columns = ['id', 'ticker_1', 'ticker_2', 'ticker_3', 'ticker_4',
                         'created_date', 'start_date', 'end_date',
                         'short_mavg', 'long_mavg', 'universe_type',
                         'trades' 'start_capital', 'end_capital']
 
-            results = pd.read_sql(sql, self.con, params={"universe_type": universe}, columns=columns)
+            results = pd.read_sql(sql, self.con,
+                                  params={"universe_type": universe, "s_mavg": short_window},
+                                  columns=columns)
 
         except Exception as e:
             print "Could not download data"
@@ -187,7 +196,7 @@ class MovingAverageCrossDAO(DAO):
 
         return results
 
-    def save_maco_backtest(self, data, maco_id):
+    def save_maco_backtest(self, data, maco_id, analysis_flag):
         """
         Save the complete backtest of the MACO strategy
         :param data: Dataframe - portfolio of positions and capital
@@ -198,8 +207,17 @@ class MovingAverageCrossDAO(DAO):
         data['created_date'] = timestamp
         data['price_date'] = data.index
 
-        # Database columns are not ticker specific
-        data = data.rename(index=str, columns={data.columns[0]: "ticker_1", data.columns[1]: "ticker_2", data.columns[2]: "ticker_3", data.columns[3]: "ticker_4"})
+        if analysis_flag:
+
+            data = data.rename(index=str, columns={data.columns[0]: "ticker_1"})
+            data["ticker_2"] = 0
+            data["ticker_3"] = 0
+            data["ticker_4"] = 0
+        else:
+            # Database columns are not ticker specific
+            data = data.rename(index=str, columns={data.columns[0]: "ticker_1", data.columns[1]: "ticker_2",
+                                                   data.columns[2]: "ticker_3", data.columns[3]: "ticker_4"})
+
         # Remove any data rows that include nan
         clean_data = data.dropna()
         with self.con:
