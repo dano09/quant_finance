@@ -10,15 +10,14 @@ import traceback
 
 import pandas as pd
 
-from MACO.dao.MovingAverageCrossDAO import MovingAverageCrossDAO
-from MACO.maco_display.PlotStrategy import PlotStrategy
+from MACO.dao.MACO_DAO import MovingAverageCrossDAO
 from MACO.maco_model.EventGenerator import EventGenerator
 from MACO.maco_model.MarketOnClosePortfolio import MarketOnClosePortfolio
 from MACO.maco_model.MarketOnCloseSecurity import MarketOnCloseSecurity
 from MACO.maco_model.MovingAverageCrossStrategy import MovingAverageCrossStrategy
 
 
-def run_strategy(start_date, end_date, universe, s_mavg, l_mavg, trade_amount, analysis_flag):
+def run_strategy(start_date, end_date, universe, s_mavg, l_mavg, analysis_flag):
     """
     Perform the Moving Average Crossover on each company in the universe
     :param start_date: datetime - Start of Strategy
@@ -160,7 +159,6 @@ def perform_maco(universe, dates, mavg_windows, capital, trade_amount, analysis_
         list_of_securities = run_strategy(dates[0], dates[1],
                                           universe,
                                           mavg_windows[0], mavg_windows[1],
-                                          trade_amount,
                                           analysis_flag
                                           )
 
@@ -337,7 +335,6 @@ if __name__ == "__main__":
 
         # Test Large Caps
         setup_and_run_maco(large_cap_params, analysis_flag)
-
 
     print("Time to complete:         %s seconds" % round((time.time() - start_time), 4))
 
