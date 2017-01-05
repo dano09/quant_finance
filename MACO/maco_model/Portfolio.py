@@ -17,13 +17,6 @@ class Portfolio(object):
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    def generate_positions(self):
-        """Provides the logic to allocate cash to certain stock
-        positions based on signals created from the Strategy
-        class."""
-        raise NotImplementedError("Must implement generate_positions()!")
-
-    @abstractmethod
     def backtest_portfolio(self):
         """Provides the necessary functionality to execute pseudo-orders,
         and dynamically update the portfolio after each bar of data.

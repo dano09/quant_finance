@@ -12,11 +12,10 @@ class Strategy(object):
     Abstract Base class for trading strategies. The Goal of the class is to
     output list of signals in the form of a time series pandas DataFrame.
     """
-
     __metaclass__ = ABCMeta
 
     @abstractmethod
     def generate_signals(self):
-        """Provides logic to create a Dataframe containing signals:
-        1 (Long), 0 (Hold), and -1 (Short) based on the strategy."""
+        """Provides logic to generate signals 1 (Long), 0 (Hold),
+        and -1 (Short) based on the strategy."""
         raise NotImplementedError("Must implement generate_signals()!")

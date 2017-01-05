@@ -53,6 +53,23 @@ class PlotStrategy(Plotter, Table):
         ax.set_ylabel('Price in $ (USD)')
         return ax
 
+    def setup_graph(self):
+        """
+        Creates and formats figure that contains a time-series graph and table
+        """
+        # Dynamically adjust height of figure based on number of signals. This is to accommodate for
+        # the different number of signals that populate the table for different figures.
+        # Used for styling purposes
+
+        fig = plt.figure(figsize=(8, 10))
+        fig.patch.set_facecolor('silver')
+        fig.suptitle('Moving Average Crossover for ' + self.security.symbol, fontsize=14, fontweight='bold')
+        ax = fig.add_subplot(111)
+        ax.set_axis_bgcolor('beige')
+        ax.set_xlabel('Time Horizon of Backtest')
+        ax.set_ylabel('Price in $ (USD)')
+        return ax
+
     def plot_data(self, ax, data, plot_type=None):
         """
         Plot closing price, moving averages, and signals
@@ -142,5 +159,15 @@ class PlotStrategy(Plotter, Table):
         plt.show()
 
 
-
+    def plot_large_number_of_signals(self):
+        """
+        Displays the signals generated from the Moving Average Crossover Strategy.
+        The first figure is a time series, containing signal positions with the closing price
+        and moving average curves. While the second figure is the table detailing the specific
+        price that stock was bought or sold based on a signal
+        """
+        ax = self.setup_graph()
+        data = self.get_data()
+        self.plot_data(ax, data)
+        plt.show()
 

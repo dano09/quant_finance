@@ -10,11 +10,11 @@ import traceback
 
 import pandas as pd
 
-from MACO.dao.MACO_DAO import MovingAverageCrossDAO
+from MACO.dao.MACO_DAO import MACO_DAO
 from MACO.maco_model.EventGenerator import EventGenerator
 from MACO.maco_model.MarketOnClosePortfolio import MarketOnClosePortfolio
 from MACO.maco_model.MarketOnCloseSecurity import MarketOnCloseSecurity
-from MACO.maco_model.MovingAverageCrossStrategy import MovingAverageCrossStrategy
+from MACO.maco_model.MovingAverageCrossOverStrategy import MovingAverageCrossOverStrategy
 
 
 def run_strategy(start_date, end_date, universe, s_mavg, l_mavg, analysis_flag):
@@ -39,7 +39,7 @@ def run_strategy(start_date, end_date, universe, s_mavg, l_mavg, analysis_flag):
         bars.set_index(bars["price_date"], drop=True, append=False, inplace=True, verify_integrity=False)
 
         # Create the Strategy
-        mac = MovingAverageCrossStrategy(universe, bars, short_window=s_mavg, long_window=l_mavg)
+        mac = MovingAverageCrossOverStrategy(universe, bars, short_lookback=s_mavg, long_lookback=l_mavg)
 
         # Generate signals from the strategy
         signals = mac.generate_signals()
@@ -56,7 +56,7 @@ def run_strategy(start_date, end_date, universe, s_mavg, l_mavg, analysis_flag):
             bars.set_index(bars["price_date"], drop=True, append=False, inplace=True, verify_integrity=False)
 
             # Create the Strategy
-            mac = MovingAverageCrossStrategy(ticker, bars, short_window=s_mavg, long_window=l_mavg)
+            mac = MovingAverageCrossOverStrategy(ticker, bars, short_lookback=s_mavg, long_lookback=l_mavg)
 
             # Generate signals from the strategy
             signals = mac.generate_signals()
@@ -98,13 +98,13 @@ def get_universe_by_market_caps(start, end, calculate_flag):
     # Calculate average volume for each ticker. Results are saved in the
     # database for performance.
     if calculate_flag:
-        tickers = ma_dao.get_universe(start, end)
+        tickers = ma_dao.get_universe(start)
         volume_df = pd.DataFrame(index=tickers)
         volume_df['volume'] = 0
 
         for ticker in tickers:
             bars = ma_dao.read_data(ticker, start, end)
-            universe.append(bars)
+            #universe.append(bars)
             try:
                 volume = calculate_avg_volume(bars)
                 volume_df.set_value(ticker, 'volume', volume)
@@ -163,11 +163,11 @@ def perform_maco(universe, dates, mavg_windows, capital, trade_amount, analysis_
                                           )
 
         # Generate portfolio of signals from the MACO strategy
-        signal_portfolio = MarketOnClosePortfolio(list_of_securities, trade_amount, initial_capital=capital)
+        signal_portfolio = MarketOnClosePortfolio(list_of_securities, trade_amount, capital)
 
         # Run backtest on portfolio
         backtest_portfolio = signal_portfolio.backtest_portfolio()
-
+        print_full(backtest_portfolio)
         # Get number of trades for meta_data
         event_gen = EventGenerator(signal_portfolio, backtest_portfolio)
         trade_count = event_gen.get_trade_count()
@@ -190,7 +190,7 @@ def generate_parameters(stock_universe, analysis_flag):
     trade_quantity = 100
     # Define the small and large lookback windows. These are what determine
     # the moving averages, which determines the signals for the strategy
-    windows = (30, 120)
+    windows = (14, 30)
 
     if analysis_flag:
         # Get entire universe for both low and high volume companies
@@ -199,6 +199,7 @@ def generate_parameters(stock_universe, analysis_flag):
 
     else:
         # Create two portfolios, each containing 4 companies
+        #small_vol_universe = [stock_universe[0][0]]
         small_vol_universe = stock_universe[0][:4]
         large_vol_universe = stock_universe[1][-4:]
 
@@ -227,8 +228,8 @@ def setup_and_run_maco(maco_params, analysis_flag):
                      capital,
                      universe_type]
     else:
-        meta_data = [tickers[0], tickers[1], tickers[2], tickers[3],
-                dates[0], dates[1],
+        #meta_data = [tickers[0], tickers[1], tickers[2], tickers[3],
+        meta_data = [tickers[0], dates[0], dates[1],
                 lookback_windows[0], lookback_windows[1],
                 capital,
                 universe_type]
@@ -246,7 +247,7 @@ def setup_and_run_maco(maco_params, analysis_flag):
 
         backtest_results = [num_of_trades, backtest_portfolio['total'][-1]]
         meta_data.extend(backtest_results)
-
+        sys.exit()
         # Save meta data and parameters of MACO strategy
         row_id = ma_dao.write_data(meta_data, analysis_flag)
 
@@ -301,8 +302,8 @@ def volume_comparison_run(maco_params):
 
 if __name__ == "__main__":
     start_time = time.time()
-    ma_dao = MovingAverageCrossDAO("localhost", "root", "GoldfishSmiles.com", "securities_master")
-    start = '1998-01-02'
+    ma_dao = MACO_DAO("localhost", "root", "GoldfishSmiles.com", "securities_master")
+    start = '2000-01-03'
     end = '2016-10-14'
 
     valid_test_flag = validate_dates(start, end)
@@ -315,7 +316,7 @@ if __name__ == "__main__":
 
     # For comparing returns of low and high volume portfolios.
     # Does not actually create a portfolio when set to True
-    analysis_flag = True
+    analysis_flag = False
 
     universe = get_universe_by_market_caps(start, end, calculate_flag)
 
@@ -339,3 +340,7 @@ if __name__ == "__main__":
     print("Time to complete:         %s seconds" % round((time.time() - start_time), 4))
 
 
+def print_full(x):
+    pd.set_option('display.max_rows', len(x))
+    print(x)
+    pd.reset_option('display.max_rows')

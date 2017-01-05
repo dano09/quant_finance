@@ -7,71 +7,96 @@ Author: Justin Dano 11/05/2016
 from Portfolio import Portfolio
 import pandas as pd
 
+from decimal import Decimal, InvalidOperation
+
 
 class MarketOnClosePortfolio(Portfolio):
     """A portfolio with logic to perform backtesting.
 
     Requires:
-    symbol - A stock symbol which forms the basis of the portfolio.
-    bars - A DataFrame of bars for a symbol set.
-    signals - A pandas DataFrame of signals (1, 0, -1) for each symbol.
-    initial_capital - The amount in cash at the start of the portfolio."""
-
+    market_on_close_securities: list (MarketOnCloseSecurity) - Each MOCS contains ticker symbol, price data (dataframe),
+     and signals (dataframe).
+    trade_amount : int - Number of shares to be bought or sold.
+    initial_capital: int - The amount in cash at the start of the portfolio.
+    """
     def __init__(self, market_on_close_securities, trade_amount=100, initial_capital=100000.0):
         self.market_on_close_securities = market_on_close_securities
+        self.trade_amount = trade_amount
         self.initial_capital = float(initial_capital)
 
         # Loop through each MOCS (market_on_close_security) to calculate positions
-        securities = self.buy_shares(trade_amount)
+        securities = self.buy_shares()
         self.positions = pd.DataFrame(securities)
 
-    def buy_shares(self, trade_amount):
-        # This strategy buys 100 shares
+        # Derive daily cash transition
+        self.cash_change = self.get_cash_change()
+
+        # Calculate asset values
+        self.holdings = self.get_holdings()
+
+    def buy_shares(self):
+        # Create a dictionary for each security in our portfolio. Each security will
+        # map to a dataframe that holds the positions for buying and selling
         securities = {
-            security.symbol: trade_amount * security.signals['signal']
+            security.symbol: self.trade_amount * security.signals['positions']
             for security in self.market_on_close_securities
+
         }
         return securities
 
-    def calculate_cash(self, poss_diff):
-        """Calculates the value of shares in USD
-
-        :param poss_diff: Dataframe - The change is shares for a given day
-        :return: Series - Cash value of all shares for every day
+    def get_cash_change(self):
         """
-        total_cash = 0
-        for s in self.market_on_close_securities:
-            total_cash += (poss_diff[s.symbol] * s.bars['close_price'].astype(float))
+        Calculate daily cash to be transacted every day. Cash change depends on
+        the position (either buy or sell) multiplied by the adjusted closing price
+        of the equity multiplied by the trade amount.
+        :return: Dataframe
+        """
+        cash_change = pd.DataFrame(index=self.positions.index)
+        try:
 
-        return self.initial_capital - total_cash.cumsum()
+            for security in self.market_on_close_securities:
+                # Perform calculation for cash change
+                cash_change[security.symbol] = security.signals['positions'] * security.bars['adj_close_price'].astype(float) * self.trade_amount
 
-    def calculate_returns(self, portfolio, pos_diff):
-        portfolio['holdings'] = portfolio.sum(axis=1)
-        portfolio['cash'] = self.calculate_cash(pos_diff)
-        portfolio['cash'][0] = self.initial_capital
-        portfolio['total'] = portfolio['cash'] + portfolio['holdings']
-        portfolio['returns'] = portfolio['total'].pct_change()
+        except InvalidOperation as e :
+            print("Invalid input : " + str(e))
 
-    def generate_positions(self):
-        # Initialize index for Portfolio Dataframe. Picking index 0 was arbitrary they all have same index length
-        portfolio = pd.DataFrame(index=self.market_on_close_securities[0].bars.index)
+        # Sum each equities change in cash
+        cash_change = cash_change.dropna()
+        cash_change['cash_change'] = cash_change.sum(axis=1)
 
-        for security in self.market_on_close_securities:
-            portfolio_series = self.positions[security.symbol] * security.bars['close_price'].astype(float)
-            pos_diff = self.positions.diff()
-            portfolio[security.symbol] = portfolio_series.values
+        return cash_change
 
-        return portfolio, pos_diff
+    def get_holdings(self):
+        """
+        Calculates daily holdings for all assets in portfolio
+        :return: Dataframe
+        """
+        holdings = pd.DataFrame(index=self.positions.index)
+        try:
+            for security in self.market_on_close_securities:
+                # Perform holdings calculation for each asset
+                holdings[security.symbol] = security.signals['signal'] * security.bars['adj_close_price'].astype(float) * self.trade_amount
+
+        except InvalidOperation as e:
+            print("Invalid input : " + str(e))
+
+        # Calculates total holdings
+        holdings['holdings'] = holdings.sum(axis=1)
+        return holdings
 
     def backtest_portfolio(self):
         """
-        Creates portfolio and performs back testing
-        :return: Dataframe - Portfolio of daily stock holdings and returns
+        Creates portfolio and performs and determines daily value of portfolio
+        :return: Dataframe - Portfolio of daily stocks with holdings and cash
         """
-        # Sum holdings from each company
-        portfolio, pos_diff = self.generate_positions()
-        # Derive metrics for the portfolio
-        self.calculate_returns(portfolio, pos_diff)
+        portfolio = self.holdings
+        portfolio['cash'] = self.initial_capital - self.cash_change['cash_change'].cumsum()
+        portfolio['cash'][0] = self.initial_capital
+        portfolio['total'] = portfolio['cash'] + portfolio['holdings']
 
         return portfolio
+
+
+
 

@@ -12,7 +12,7 @@ import pandas as pd
 from MACO.dao.DAO import DAO
 
 
-class MovingAverageCrossDAO(DAO):
+class MACO_DAO(DAO):
     """
     DAO specific to reading and writing to database for the Moving Average Crossover
     """

@@ -136,6 +136,16 @@ class PlotPortfolio(Plotter, Table):
         plt.tight_layout()
         table.set_fontsize(10)
 
+    def setup_graph(self):
+        fig = plt.figure(figsize=(10, 5))
+        fig.patch.set_facecolor('silver')
+        fig.suptitle('Equity Curve - Low Volume Portfolio', fontsize=14, fontweight='bold')
+        ax = fig.add_subplot(111)
+        ax.set_axis_bgcolor('beige')
+        ax.set_xlabel('Time Horizon of Backtest')
+        ax.set_ylabel('Portfolio value in $ (USD)')
+        return ax
+
     def plot_equity_curve(self):
         """
         Plot the equity curve of the portfolio in dollars and display trade table showing
@@ -146,16 +156,6 @@ class PlotPortfolio(Plotter, Table):
         data = self.get_data()
         self.plot_data(ax, data)
         self.create_table()
-
-    def setup_graph(self):
-        fig = plt.figure(figsize=(10, 5))
-        fig.patch.set_facecolor('silver')
-        fig.suptitle('Equity Curve - Low Volume Portfolio', fontsize=14, fontweight='bold')
-        ax = fig.add_subplot(111)
-        ax.set_axis_bgcolor('beige')
-        ax.set_xlabel('Time Horizon of Backtest')
-        ax.set_ylabel('Portfolio value in $ (USD)')
-        return ax
 
     def plot_large_equity_curve(self):
         """
