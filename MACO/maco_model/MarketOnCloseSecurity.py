@@ -11,9 +11,9 @@ class MarketOnCloseSecurity():
     on a set of signals as provided by a Strategy.
 
     Requires:
-    symbol - A stock symbol which forms the basis of the portfolio.
-    bars - A DataFrame of bars for a symbol set.
-    signals - A pandas DataFrame of signals (1, 0, -1) for each symbol.
+    symbol: string - A stock symbol which forms the basis of the portfolio
+    bars: dataframe -  daily OHLCAV price data
+    signals: dataframe -  Signals (1, 0, -1) indicating buy/sell transactions
    """
 
     def __init__(self, symbol, bars, signals):

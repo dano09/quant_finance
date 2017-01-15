@@ -40,7 +40,6 @@ class MarketOnClosePortfolio(Portfolio):
         securities = {
             security.symbol: self.trade_amount * security.signals['positions']
             for security in self.market_on_close_securities
-
         }
         return securities
 
@@ -62,7 +61,6 @@ class MarketOnClosePortfolio(Portfolio):
             print("Invalid input : " + str(e))
 
         # Sum each equities change in cash
-        cash_change = cash_change.dropna()
         cash_change['cash_change'] = cash_change.sum(axis=1)
 
         return cash_change

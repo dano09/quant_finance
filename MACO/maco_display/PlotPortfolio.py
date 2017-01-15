@@ -71,7 +71,7 @@ class PlotPortfolio(Plotter, Table):
             ax.plot(data[i][0], data[i][1], '^', markersize=9, color=colors[i], label=str(security.symbol))
             ax.plot(data[i][2], data[i][3], 'v', markersize=9, color=colors[i], label='_nolegend_')
 
-        plt.legend(numpoints=1, prop={'size': 13})
+        plt.legend(numpoints=1, prop={'size': 13}, loc=2)
 
     def create_cell_text(self, b_dates=None, s_dates=None):
         table = []
@@ -102,8 +102,8 @@ class PlotPortfolio(Plotter, Table):
 
     def create_table_colors(self, rows, num_of_columns, table_data):
         cell_colors = []
-        positive_returns = ['lightgreen'] * num_of_columns
-        negative_returns = ['lightcoral'] * num_of_columns
+        positive_returns = ['aliceblue'] * num_of_columns
+        negative_returns = ['aliceblue'] * num_of_columns
         col_colors = ['beige'] * num_of_columns
         row_colors = ['beige'] * len(rows)
 
@@ -139,7 +139,7 @@ class PlotPortfolio(Plotter, Table):
     def setup_graph(self):
         fig = plt.figure(figsize=(10, 5))
         fig.patch.set_facecolor('silver')
-        fig.suptitle('Equity Curve - Low Volume Portfolio', fontsize=14, fontweight='bold')
+        fig.suptitle('Equity Curve - High Volume Portfolio', fontsize=14, fontweight='bold')
         ax = fig.add_subplot(111)
         ax.set_axis_bgcolor('beige')
         ax.set_xlabel('Time Horizon of Backtest')

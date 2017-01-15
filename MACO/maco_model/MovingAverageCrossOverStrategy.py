@@ -58,6 +58,7 @@ class MovingAverageCrossOverStrategy(Strategy):
         change in signal the position will be 0
         '''
         signals['positions'] = signals['signal'].diff()
+        signals['positions'][0] = 0
 
         return signals
 

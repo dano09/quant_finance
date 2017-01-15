@@ -62,7 +62,7 @@ class PlotStrategy(Plotter, Table):
         # Used for styling purposes
 
         fig = plt.figure(figsize=(8, 10))
-        fig.patch.set_facecolor('silver')
+        #fig.patch.set_facecolor('silver')
         fig.suptitle('Moving Average Crossover for ' + self.security.symbol, fontsize=14, fontweight='bold')
         ax = fig.add_subplot(111)
         ax.set_axis_bgcolor('beige')
@@ -81,12 +81,14 @@ class PlotStrategy(Plotter, Table):
         ax.plot(self.security.bars['adj_close_price'].astype(float), color='navy', lw=2.5)
         ax.plot(self.security.signals['short_mavg'], 'dodgerblue', lw=2.)
         ax.plot(self.security.signals['long_mavg'], 'sandybrown', lw=2.)
-        ax.legend(['Closing Price', 'Short MAVG', 'Long MVAG'], loc=2, prop={'size': 10})
+        #ax.legend(['Closing Price', 'Short MAVG', 'Long MVAG'], loc=2, prop={'size': 10})
 
         # Plot Buy Signals
         ax.plot(data[0], data[1], '^', markersize=10, color='lightgreen')
         # Plot Sell Signals
         ax.plot(data[2], data[3], 'v', markersize=10, color='lightcoral')
+        ax.legend(['Closing Price', 'Short MAVG', 'Long MVAG', 'Buy', 'Sell'], numpoints=1, loc=2, prop={'size': 10})
+
 
     def create_cell_text(self, b_dates, s_dates):
         """
@@ -117,8 +119,8 @@ class PlotStrategy(Plotter, Table):
 
     def create_table_colors(self, rows, num_of_columns=None, table_data=None):
         cell_colors = []
-        buy_color = ['lightgreen'] * 3
-        sell_color = ['lightcoral'] * 3
+        buy_color = ['aliceblue'] * 3
+        sell_color = ['aliceblue'] * 3
         col_colors = ['beige'] * 3
         row_colors = ['beige'] * len(rows)
 

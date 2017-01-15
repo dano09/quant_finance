@@ -62,8 +62,8 @@ def display_maco_signals(securities):
     """Display signals generated from MACO"""
     for security in securities:
         plot_strat = PlotStrategy(security)
-        plot_strat.plot_large_number_of_signals()
-        #plot_strat.plot_price_with_signals()
+        #plot_strat.plot_large_number_of_signals()
+        plot_strat.plot_price_with_signals()
 
 
 def setup_analysis(maco_meta, quantity=None):
@@ -91,8 +91,8 @@ if __name__ == "__main__":
     start_time = time.time()
     ma_dao = MACO_DAO("localhost", "root", "GoldfishSmiles.com", "securities_master")
     analysis_flag = False
-    s_window = 14
-    l_window = 30
+    s_window = 275
+    l_window = 350
 
     small_vol_meta = ma_dao.read_maco_meta('small_vol', s_window, l_window)
     large_vol_meta = ma_dao.read_maco_meta('large_vol', s_window, l_window)
@@ -105,7 +105,7 @@ if __name__ == "__main__":
 
     else:
         mocp_small, plotter_small, backtest_small = setup_portfolio(small_vol_meta)
-        #mocp_large, plotter_large, backtest_large = setup_portfolio(large_vol_meta)
+        mocp_large, plotter_large, backtest_large = setup_portfolio(large_vol_meta)
         """
         PART 1:
         Display results for small-volume portfolio

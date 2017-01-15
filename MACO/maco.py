@@ -17,6 +17,11 @@ from MACO.maco_model.MarketOnCloseSecurity import MarketOnCloseSecurity
 from MACO.maco_model.MovingAverageCrossOverStrategy import MovingAverageCrossOverStrategy
 
 
+def print_full(x):
+    pd.set_option('display.max_rows', len(x))
+    print(x)
+    pd.reset_option('display.max_rows')
+
 def run_strategy(start_date, end_date, universe, s_mavg, l_mavg, analysis_flag):
     """
     Perform the Moving Average Crossover on each company in the universe
@@ -167,7 +172,7 @@ def perform_maco(universe, dates, mavg_windows, capital, trade_amount, analysis_
 
         # Run backtest on portfolio
         backtest_portfolio = signal_portfolio.backtest_portfolio()
-        print_full(backtest_portfolio)
+        #print_full(backtest_portfolio)
         # Get number of trades for meta_data
         event_gen = EventGenerator(signal_portfolio, backtest_portfolio)
         trade_count = event_gen.get_trade_count()
@@ -190,12 +195,15 @@ def generate_parameters(stock_universe, analysis_flag):
     trade_quantity = 100
     # Define the small and large lookback windows. These are what determine
     # the moving averages, which determines the signals for the strategy
-    windows = (14, 30)
+    windows = (275, 350)
 
     if analysis_flag:
         # Get entire universe for both low and high volume companies
         small_vol_universe = stock_universe[0]
         large_vol_universe = stock_universe[1]
+
+        #small_vol_universe = stock_universe[0][:40]
+        #large_vol_universe = stock_universe[1][-40:]
 
     else:
         # Create two portfolios, each containing 4 companies
@@ -206,7 +214,7 @@ def generate_parameters(stock_universe, analysis_flag):
     return windows, small_vol_universe, large_vol_universe, start_capital, trade_quantity
 
 
-def setup_and_run_maco(maco_params, analysis_flag):
+def setup_maco_environment(maco_params, analysis_flag):
     """
     Set up parameters and perform the Moving Average Crossover. Save the meta-data,
     signal generations, and backtesting results to the database
@@ -228,11 +236,11 @@ def setup_and_run_maco(maco_params, analysis_flag):
                      capital,
                      universe_type]
     else:
-        #meta_data = [tickers[0], tickers[1], tickers[2], tickers[3],
-        meta_data = [tickers[0], dates[0], dates[1],
-                lookback_windows[0], lookback_windows[1],
-                capital,
-                universe_type]
+        meta_data = [tickers[0], tickers[1], tickers[2], tickers[3],
+                    dates[0], dates[1],
+                    lookback_windows[0], lookback_windows[1],
+                    capital,
+                    universe_type]
 
     try:
         # Market on Close Portfolio (MOCP) contains the initial data for backtesting
@@ -247,9 +255,13 @@ def setup_and_run_maco(maco_params, analysis_flag):
 
         backtest_results = [num_of_trades, backtest_portfolio['total'][-1]]
         meta_data.extend(backtest_results)
-        sys.exit()
+
+        #sys.exit()
         # Save meta data and parameters of MACO strategy
+
         row_id = ma_dao.write_data(meta_data, analysis_flag)
+
+        #TODO: MAKE NAN REMOVAL UNIFORM WITH BACKTEST/SIGNALS
 
         # Save signals generated for each security
         for ticker_id, security in enumerate(mocp.market_on_close_securities):
@@ -294,16 +306,16 @@ def volume_comparison_run(maco_params):
 
     for company in small_vol_universe:
         small_cap_params = start, end, params[0], company, params[3], 'small_vol', params[4]
-        setup_and_run_maco(small_cap_params, True)
+        setup_maco_environment(small_cap_params, True)
 
     for company in large_vol_universe:
         large_cap_params = start, end, params[0], company, params[3], 'large_vol', params[4]
-        setup_and_run_maco(large_cap_params, True)
+        setup_maco_environment(large_cap_params, True)
 
 if __name__ == "__main__":
     start_time = time.time()
     ma_dao = MACO_DAO("localhost", "root", "GoldfishSmiles.com", "securities_master")
-    start = '2000-01-03'
+    start = '1998-01-06'
     end = '2016-10-14'
 
     valid_test_flag = validate_dates(start, end)
@@ -332,10 +344,10 @@ if __name__ == "__main__":
         large_cap_params = start, end, params[0], params[2], params[3], 'large_vol', params[4]
 
         # Test Small Caps
-        setup_and_run_maco(small_cap_params, analysis_flag)
+        setup_maco_environment(small_cap_params, analysis_flag)
 
         # Test Large Caps
-        setup_and_run_maco(large_cap_params, analysis_flag)
+        setup_maco_environment(large_cap_params, analysis_flag)
 
     print("Time to complete:         %s seconds" % round((time.time() - start_time), 4))
 

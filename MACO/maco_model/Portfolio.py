@@ -17,9 +17,17 @@ class Portfolio(object):
     __metaclass__ = ABCMeta
 
     @abstractmethod
+    def get_cash_change(self):
+        """Derives the daily transaction of cash to assets and visa versa."""
+        raise NotImplementedError("Must implement get_cash_change()!")
+
+    @abstractmethod
+    def get_holdings(self):
+        """Derives the daily value of all assets in the portfolio."""
+        raise NotImplementedError("Must implement get_holdings()!")
+
+    @abstractmethod
     def backtest_portfolio(self):
-        """Provides the necessary functionality to execute pseudo-orders,
-        and dynamically update the portfolio after each bar of data.
-        The portfolio should also be able to calculate returns and report
-        total equity."""
+        """Calculates cash and returns after each bar of data. Logic
+        to execute pseudo-orders is included."""
         raise NotImplementedError("Must implement backtest_portfolio()!")

@@ -25,7 +25,7 @@ class PlotResults(Plotter, Table):
         fig = plt.figure(figsize=(8, 5))
         fig.patch.set_facecolor('silver')
         fig.suptitle(
-            'Comparing High and Low Volume Portfolios ',
+            'Comparing Small and Large Volume Portfolios ',
             fontsize=14, fontweight='bold')
         ax = fig.add_subplot(211)
         ax.set_axis_bgcolor('beige')
@@ -74,8 +74,8 @@ class PlotResults(Plotter, Table):
 
     def create_table_colors(self, row_labels, column_labels, cell_text):
         cell_colors = []
-        cell_color = ['lightgreen'] * len(column_labels)
-        cell_color2 = ['lightcoral'] * len(column_labels)
+        cell_color = ['aliceblue'] * len(column_labels)
+        cell_color2 = ['aliceblue'] * len(column_labels)
         col_colors = ['beige'] * len(column_labels)
         row_colors = ['beige'] * len(row_labels)
 

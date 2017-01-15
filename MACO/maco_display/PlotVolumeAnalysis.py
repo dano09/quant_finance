@@ -21,7 +21,7 @@ class PlotVolumeAnalysis(Plotter):
         fig = plt.figure(figsize=(10, 5))
         fig.patch.set_facecolor('silver')
         fig.suptitle(
-            'Large Sample - Equity Curve Comparison',
+            'Entire Universe - Equity Curve Comparison',
             fontsize=14, fontweight='bold')
         ax = fig.add_subplot(111)
         ax.set_axis_bgcolor('beige')
@@ -43,11 +43,13 @@ class PlotVolumeAnalysis(Plotter):
     def plot_data(self, ax, data, return_type):
         if return_type == 'small':
             for security in data:
-                ax.plot(security, 'darkred', lw=1)
+                #ax.plot(security, 'darkred', lw=1)
+                ax.plot(security, 'navy', lw=1)
 
         else:
             for security in data:
-                ax.plot(security, 'tomato', lw=1)
+                #ax.plot(security, 'tomato', lw=1)
+                ax.plot(security, 'c', lw=1)
 
     def plot_results(self):
         """
@@ -68,9 +70,13 @@ class PlotVolumeAnalysis(Plotter):
         ax.legend(['Small Volume Portfolio', 'Large Volume Portfolio'], loc=2)
         ax.axhline(y=100000, linewidth=2, color='k')
         leg = ax.get_legend()
-        leg.legendHandles[0].set_color('darkred')
-        leg.legendHandles[1].set_color('tomato')
+        #leg.legendHandles[0].set_color('darkred')
+        #leg.legendHandles[1].set_color('tomato')
+        leg.legendHandles[0].set_color('navy')
+        leg.legendHandles[1].set_color('c')
         for legobj in leg.legendHandles:
             legobj.set_linewidth(2.0)
+
+
 
 
